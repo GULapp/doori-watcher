@@ -1,2 +1,2 @@
 # go_monitoring
-linux monitoring application in golang
+The application for monitoring LINUX in golang

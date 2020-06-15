@@ -1,22 +1,33 @@
 package main
 
 import (
-	"agent/system"
-	"bytes"
 	"encoding/json"
+	"fmt"
+	"go_monitoring/agent/system"
 	"log"
+	"os"
 )
 
 const (
 	KLOGFLAG = log.Lshortfile | log.Lmicroseconds
-	//KLOGFLAG = log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile
 )
-
 
 var (
-	logBuffer bytes.Buffer
-	logger = log.New(&logBuffer, "Agent : " , KLOGFLAG)
+	logFile *os.File
+	logger  *log.Logger
+	//logBuffer bytes.Buffer
+	//logger = common.New(&logBuffer, "Agent : " , KLOGFLAG)
 )
+
+func init() {
+	var err error
+	logFile, err = os.OpenFile("/tmp/common", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		fmt.Errorf("failed to open a logfile")
+		os.Exit(-1)
+	}
+	logger = log.New(logFile, "Agent : ", KLOGFLAG)
+}
 
 func main() {
 	var collection []Gather
@@ -33,11 +44,16 @@ func main() {
 	for _, g := range collection {
 		g.Gathering()
 
-		b,err := json.MarshalIndent( g, "", "\t" )
+		b, err := json.MarshalIndent(g, "", "\t")
 		if err != nil {
 			log.Println("json Marshaling error")
 			return
 		}
 		logger.Print(string(b))
+		n, err := logFile.Write([]byte("leejaeseong\n"))
+		if err != nil {
+			fmt.Printf("Write err %d\n", n)
+			fmt.Printf("Write err %s\n", err.Error())
+		}
 	}
 }

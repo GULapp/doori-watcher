@@ -2,9 +2,10 @@ package system
 
 import (
 	"io/ioutil"
-	"log"
 	"strconv"
 	"strings"
+	DRLOG "go_monitoring/common/log"
+	DRSENDER "go_monitoring/common/sender"
 )
 
 type cpuCore struct {
@@ -28,32 +29,34 @@ type Cpu struct {
 	Cores           []cpuCore
 }
 
-func (c *Cpu) Display() {
-	log.Printf("%d", c.Totalsystemmode)
-	log.Printf("%d", c.Totalusermode)
-	log.Printf("%d", c.Totalusermode)
-	log.Printf("%d", c.Totalsystemmode)
-	log.Printf("%d", c.Totalnice)
-	log.Printf("%d", c.Totalidle)
-	log.Printf("%d", c.Totalwait)
-	log.Printf("%d", c.Totalirq)
-	log.Printf("%d", c.Totalsrq)
+var logging = DRLOG.NewDrLog("./agent", 0744)
+
+func (c *Cpu) PrettyPrint() {
+	logging.Debug("%d", c.Totalsystemmode)
+	logging.Debug("%d", c.Totalusermode)
+	logging.Debug("%d", c.Totalusermode)
+	logging.Debug("%d", c.Totalsystemmode)
+	logging.Debug("%d", c.Totalnice)
+	logging.Debug("%d", c.Totalidle)
+	logging.Debug("%d", c.Totalwait)
+	logging.Debug("%d", c.Totalirq)
+	logging.Debug("%d", c.Totalsrq)
 
 	for i, coreMembers := range c.Cores {
-		log.Printf("cpu core[%d] %d", i, coreMembers.Usermode)
-		log.Printf("%d", coreMembers.Systemmode)
-		log.Printf("%d", coreMembers.Nice)
-		log.Printf("%d", coreMembers.Idle)
-		log.Printf("%d", coreMembers.Wait)
-		log.Printf("%d", coreMembers.Irq)
-		log.Printf("%d", coreMembers.Srq)
+		logging.Debug("cpu core[%d] %d", i, coreMembers.Usermode)
+		logging.Debug("%d", coreMembers.Systemmode)
+		logging.Debug("%d", coreMembers.Nice)
+		logging.Debug("%d", coreMembers.Idle)
+		logging.Debug("%d", coreMembers.Wait)
+		logging.Debug("%d", coreMembers.Irq)
+		logging.Debug("%d", coreMembers.Srq)
 	}
 }
 
 func (c *Cpu) Gathering() error {
 	contents, err := ioutil.ReadFile("/proc/stat")
 	if err != nil {
-		return err
+		return  err
 	}
 	lines := strings.Split(string(contents), "\n")
 	for i, line := range lines {
@@ -99,5 +102,16 @@ func (c *Cpu) Gathering() error {
 			}
 		}
 	}
+	return nil
+}
+
+func (c *Cpu) Done(buffer []byte) error {
+	sender := DRSENDER.NewDrSender()
+	sender.SetIPAddr("TCP", "127.0.0.1")
+	sender.Connect()
+	sender.PushDataOnAsync(buffer)
+
+	go sender.Send()
+
 	return nil
 }

@@ -12,8 +12,8 @@ const (
 
 type DrSender struct {
 	bytesBuffer chan []byte
-	conn        net.IPConn
-	addr        net.IPAddr
+	conn        *net.IPConn
+	addr        *net.IPAddr
 	err         error
 }
 
@@ -46,7 +46,7 @@ func (s *DrSender) SetIPAddr(network string, address string) {
 }
 
 func (s *DrSender) Connect() {
-	s.conn, s.err = net.DialIP(s.addr.Network(), nil, &s.addr)
+	s.conn, s.err = net.DialIP(s.addr.Network(), nil, s.addr)
 	if s.err != nil {
 		log.Panicln("failed to call DialIP ")
 	}

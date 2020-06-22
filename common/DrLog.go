@@ -15,7 +15,6 @@ const (
 
 var (
 	defaultPrefix string
-
 )
 
 type DrLog struct {

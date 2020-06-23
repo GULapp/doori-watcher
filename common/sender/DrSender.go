@@ -1,53 +1,51 @@
 package sender
 
 import (
-	"log"
 	"net"
+	DRLOG "go_monitoring/common/log"
+)
+
+var (
+	logging *DRLOG.DrLog
 )
 
 const (
-	kTcp = "tcp"
-	kUdp = "udp"
+	TCP = "tcp"
+	UDP = "udp"
 )
 
 type DrSender struct {
-	bytesBuffer chan []byte
-	conn        *net.IPConn
-	addr        *net.IPAddr
-	err         error
+	conn *net.Dialer
+}
+
+func init() {
+	logging = DRLOG.NewDrLog("./agent.log", 0744)
 }
 
 func NewDrSender() *DrSender {
-	return &DrSender{bytesBuffer: make(chan []byte)}
+	return &DrSender{}
 }
 
-func (s *DrSender) PushDataOnAsync(data []byte) {
-	s.bytesBuffer <- data
-}
-
-func (s DrSender) Send() {
-	sendingBuffer := <-s.bytesBuffer
-	sendLen, err := s.conn.Write(sendingBuffer)
+func (s DrSender) Send(streamBuffer []byte) error {
+	sendLen, err := s.conn.Write(streamBuffer)
 	if err != nil {
-		log.Panicln("failed to IPConn.Write() ")
+		logging.Fatal("failed to Write(), %s", err.Error())
+		return err
 	}
-	if sendLen != len(sendingBuffer) {
-		log.Fatalln("wrong size")
+	if sendLen != len(streamBuffer) {
+		logging.Fatal("wrong size")
+		return err
 	}
-	log.Println("Send Data : ", sendingBuffer)
+	logging.Debug("Send Data : ", streamBuffer)
+	return nil
 }
 
-func (s *DrSender) SetIPAddr(network string, address string) {
-	s.addr, s.err = net.ResolveIPAddr(network, address)
-	if s.err != nil {
-		log.Fatal("failed to set IP, addr")
-	}
-	log.Println("Address : ", s.addr.String())
-}
-
-func (s *DrSender) Connect() {
-	s.conn, s.err = net.DialIP(s.addr.Network(), nil, s.addr)
-	if s.err != nil {
-		log.Panicln("failed to call DialIP ")
-	}
+func (s *DrSender) Connect(network string, address string) error{
+	//var err error
+	//s.conn, err = s.conn.Dial(network, address)
+	//if err != nil {
+	//	logging.Fatal("failed to call DialIP ")
+	//	return err
+	//}
+	return nil
 }

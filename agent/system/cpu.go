@@ -1,11 +1,18 @@
 package system
 
 import (
-	"io/ioutil"
-	"strconv"
-	"strings"
+	"encoding/json"
 	DRLOG "go_monitoring/common/log"
 	DRSENDER "go_monitoring/common/sender"
+	"io/ioutil"
+	"os"
+	"strconv"
+	"strings"
+)
+
+var (
+	logging *DRLOG.DrLog
+	socket  *DRSENDER.DrSender
 )
 
 type cpuCore struct {
@@ -29,7 +36,15 @@ type Cpu struct {
 	Cores           []cpuCore
 }
 
-var logging = DRLOG.NewDrLog("./agent", 0744)
+func init() {
+	logging = DRLOG.NewDrLog("./agent.log", 0744)
+	socket  = DRSENDER.NewDrSender()
+
+	if socket.Connect(DRSENDER.TCP, "localhost:12345") != nil {
+		logging.Info("failed to connect to SERVER")
+		os.Exit(-1)
+	}
+}
 
 func (c *Cpu) PrettyPrint() {
 	logging.Debug("%d", c.Totalsystemmode)
@@ -53,10 +68,11 @@ func (c *Cpu) PrettyPrint() {
 	}
 }
 
-func (c *Cpu) Gathering() error {
-	contents, err := ioutil.ReadFile("/proc/stat")
-	if err != nil {
-		return  err
+func (c *Cpu) Gathering() (jsonBytes []byte, errInfo error) {
+	contents, errInfo := ioutil.ReadFile("/proc/stat")
+	if errInfo != nil {
+		logging.Fatal("cant read /proc/stat")
+		return  jsonBytes, errInfo
 	}
 	lines := strings.Split(string(contents), "\n")
 	for i, line := range lines {
@@ -102,16 +118,22 @@ func (c *Cpu) Gathering() error {
 			}
 		}
 	}
-	return nil
+	return c.serialize()
+}
+
+func (c *Cpu) serialize() (jsonBytes []byte, errInfo error) {
+	jsonBytes, errInfo = json.MarshalIndent(c, "", "\t")
+	if errInfo != nil {
+		logging.Fatal("json Marshaling error")
+		return jsonBytes, errInfo
+	}
+	return jsonBytes, nil
 }
 
 func (c *Cpu) Done(buffer []byte) error {
-	sender := DRSENDER.NewDrSender()
-	sender.SetIPAddr("TCP", "127.0.0.1")
-	sender.Connect()
-	sender.PushDataOnAsync(buffer)
-
-	go sender.Send()
-
+	if err := socket.Send(buffer) ; err!= nil {
+		logging.Info("send to server, error : %s", err.Error())
+		return err
+	}
 	return nil
 }

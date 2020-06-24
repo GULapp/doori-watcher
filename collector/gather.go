@@ -8,7 +8,7 @@ Done 그 다음 행위(보통은, Monitoring SERVER에 []byte를 보냄)
 PrettyPrint human friendly print
  */
 type Gather interface {
-	Gathering() ([]byte ,error)
+	Gathering() []byte
 	Done([]byte) error
 	PrettyPrint()
 }

@@ -27,13 +27,10 @@ func main() {
 	var collection []collector.Gather
 	collection = append(collection, &system.Cpu{})
 
-	for{
+	for {
 		for _, g := range collection {
-			stream, err := g.Gathering() //데이터수집
-			if err != nil {
-				logging.Fatal("gathering failed. %s", err.Error())
-				os.Exit(-1)
-			}
+			stream := g.Gathering() //데이터수집
+			logging.Info(string(stream))
 			g.Done(stream) //수집된 데이터를 처리.
 		}
 		time.Sleep(100*time.Millisecond)

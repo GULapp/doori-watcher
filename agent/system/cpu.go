@@ -2,19 +2,11 @@ package system
 
 import (
 	"encoding/json"
-	DRLOG "go_monitoring/common/log"
-	DRSENDER "go_monitoring/common/sender"
+	LOG "go_monitoring/common/log"
 	"io/ioutil"
-	"net"
 	"os"
 	"strconv"
 	"strings"
-)
-
-var (
-	logging *DRLOG.DrLog
-	socket  *DRSENDER.DrSender
-	fd      net.Conn
 )
 
 type Cpu struct {
@@ -29,6 +21,7 @@ type Cpu struct {
 }
 
 type cpuCore struct {
+	Corenum    uint32 `json:corenum`
 	Usermode   uint32 `json:"usermode"`
 	Systemmode uint32 `json:"systemmode"`
 	Nice       uint32 `json:"-"`
@@ -38,42 +31,37 @@ type cpuCore struct {
 	Srq        uint32 `json:"-"`
 }
 
-func init() {
-	logging = DRLOG.NewDrLog("./agent.log", 0744)
-	socket = DRSENDER.NewDrSender()
-	var err error
-	if fd, err = socket.Connect("localhost:12345"); err != nil {
-		logging.Info("failed to connect to SERVER")
-		os.Exit(-1)
-	}
-}
-
 func (c *Cpu) PrettyPrint() {
-	logging.Debug("%d", c.Totalsystemmode)
-	logging.Debug("%d", c.Totalusermode)
-	logging.Debug("%d", c.Totalusermode)
-	logging.Debug("%d", c.Totalsystemmode)
-	logging.Debug("%d", c.Totalnice)
-	logging.Debug("%d", c.Totalidle)
-	logging.Debug("%d", c.Totalwait)
-	logging.Debug("%d", c.Totalirq)
-	logging.Debug("%d", c.Totalsrq)
+	LOG.Debug("%d", c.Totalsystemmode)
+	LOG.Debug("%d", c.Totalusermode)
+	LOG.Debug("%d", c.Totalusermode)
+	LOG.Debug("%d", c.Totalsystemmode)
+	LOG.Debug("%d", c.Totalnice)
+	LOG.Debug("%d", c.Totalidle)
+	LOG.Debug("%d", c.Totalwait)
+	LOG.Debug("%d", c.Totalirq)
+	LOG.Debug("%d", c.Totalsrq)
 
 	for i, coreMembers := range c.Cores {
-		logging.Debug("cpu core[%d] %d", i, coreMembers.Usermode)
-		logging.Debug("%d", coreMembers.Systemmode)
-		logging.Debug("%d", coreMembers.Nice)
-		logging.Debug("%d", coreMembers.Idle)
-		logging.Debug("%d", coreMembers.Wait)
-		logging.Debug("%d", coreMembers.Irq)
-		logging.Debug("%d", coreMembers.Srq)
+		LOG.Debug("cpu core[%d] %d", i, coreMembers.Usermode)
+		LOG.Debug("%d", coreMembers.Systemmode)
+		LOG.Debug("%d", coreMembers.Nice)
+		LOG.Debug("%d", coreMembers.Idle)
+		LOG.Debug("%d", coreMembers.Wait)
+		LOG.Debug("%d", coreMembers.Irq)
+		LOG.Debug("%d", coreMembers.Srq)
 	}
+}
+func (c *Cpu) cleaning() {
+	c.Cores = nil
 }
 
 func (c *Cpu) Gathering() []byte {
-	contents, err:= ioutil.ReadFile("/proc/stat")
+	c.cleaning()
+
+	contents, err := ioutil.ReadFile("/proc/stat")
 	if err != nil {
-		logging.Fatal("cant read /proc/stat : %s", err.Error())
+		LOG.Fatal("cant read /proc/stat : %s", err.Error())
 		os.Exit(-1)
 	}
 	lines := strings.Split(string(contents), "\n")
@@ -109,6 +97,7 @@ func (c *Cpu) Gathering() []byte {
 				Irq, _ := strconv.ParseUint(fields[6], 10, 32)
 				Srq, _ := strconv.ParseUint(fields[7], 10, 32)
 
+				cpuCore.Corenum = uint32(i)
 				cpuCore.Usermode = uint32(Usermode)
 				cpuCore.Systemmode = uint32(Systemmode)
 				cpuCore.Nice = uint32(Nice)
@@ -126,18 +115,13 @@ func (c *Cpu) Gathering() []byte {
 func (c *Cpu) serialize() []byte {
 	jsonBytes, err := json.MarshalIndent(c, "", "")
 	if err != nil {
-		logging.Fatal("Marshaling error : %s", err.Error())
+		LOG.Fatal("Marshaling error : %s", err.Error())
 		os.Exit(-1)
 	}
 	return jsonBytes
 }
 
-/* Socket을 이용하여(already Established) 데이터 송신 */
 func (c *Cpu) Done(buffer []byte) error {
-	logging.Debug("finished sending :", buffer)
-	if err := socket.Send(fd, buffer); err != nil {
-		logging.Fatal("Cpu, Send() error : %s", err.Error())
-		return err
-	}
+	LOG.Info("Cpu gathering, done cap%d, len%d", cap(buffer), len(buffer))
 	return nil
 }

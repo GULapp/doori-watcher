@@ -3,21 +3,30 @@ package main
 import (
 	"go_monitoring/agent/system"
 	"go_monitoring/collector"
-	DRLOG "go_monitoring/common/log"
+	"go_monitoring/common/feed"
+	LOG "go_monitoring/common/log"
+	"net"
 	"os"
 	"time"
 )
-
-var (
-	logging *DRLOG.DrLog
+var(
+	feedhandler *feed.FeedHandler
+	conn net.Conn
 )
 
 func init() {
-	logging = DRLOG.NewDrLog("./agent.log", 0744)
+	var err error
+	feedhandler = feed.NewFeedHandler()
+	conn, err = feedhandler.Connect("localhost:12345")
+	if err != nil {
+		LOG.Fatal("failed to Call FeedHandler : %s", err.Error())
+		os.Exit(-1)
+	}
 }
 
 func main() {
-	logging.Info("START")
+	LOG.Info("System Monitoring Agent START")
+	bytesQueue := make(chan []byte, 421)
 
 	//모니터링 대상 객체등록
 	//Cpu, Ram 정보를 가지고 오는 객체등록
@@ -27,13 +36,24 @@ func main() {
 	var collection []collector.Gather
 	collection = append(collection, &system.Cpu{})
 
+	/* monitoring server */
+	go func() {
+		buffer :=<-bytesQueue
+		if err:=feedhandler.Send(conn, buffer); err!= nil {
+			LOG.Fatal("connecting to server error : ", err.Error())
+			conn.Close()
+			os.Exit(-1)
+		}
+	}()
+
 	for {
 		for _, g := range collection {
 			stream := g.Gathering() //데이터수집
-			logging.Info(string(stream))
+			g.PrettyPrint()
+			bytesQueue <- stream
 			g.Done(stream) //수집된 데이터를 처리.
 		}
-		time.Sleep(100*time.Millisecond)
+		time.Sleep(1000*time.Millisecond) /*1 second sleep*/
 	}
 	os.Exit(0)
 }

@@ -23,5 +23,10 @@
 
 ## 용어
 * Agent : 모니터링 대상서버에 데이터 수집프로세스
-* Server : 모니터링 대상서버로 부터 수집데이터를 가공처리 및 Client Notication
+* Server : 모니터링 대상서버로 부터 수집데이터를 가공처리 및 Client Notification
 * Client : 모니터링 정보를 효율적으로 보여주는 UI어플리케이션
+
+## todo
+* log level에 따라 로그로직 구현부
+* leveldb 에 실시간데이터 저장.
+* Client prototype 개발.

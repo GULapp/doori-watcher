@@ -32,34 +32,32 @@ type cpuCore struct {
 }
 
 func (c *Cpu) PrettyPrint() {
-	LOG.Debug("%d", c.Totalsystemmode)
-	LOG.Debug("%d", c.Totalusermode)
-	LOG.Debug("%d", c.Totalusermode)
-	LOG.Debug("%d", c.Totalsystemmode)
-	LOG.Debug("%d", c.Totalnice)
-	LOG.Debug("%d", c.Totalidle)
-	LOG.Debug("%d", c.Totalwait)
-	LOG.Debug("%d", c.Totalirq)
-	LOG.Debug("%d", c.Totalsrq)
+	LOG.Debug("Total System Cpu Usage %d", c.Totalsystemmode)
+	LOG.Debug("Total User Cpu Usage %d", c.Totalusermode)
+	LOG.Debug("Total nice %d", c.Totalnice)
+	LOG.Debug("Total idle %d", c.Totalidle)
+	LOG.Debug("Total wait %d", c.Totalwait)
+	LOG.Debug("Total IRQ %d", c.Totalirq)
+	LOG.Debug("Total SRQ %d", c.Totalsrq)
 
 	for i, coreMembers := range c.Cores {
-		LOG.Debug("cpu core[%d] %d", i, coreMembers.Usermode)
-		LOG.Debug("%d", coreMembers.Systemmode)
-		LOG.Debug("%d", coreMembers.Nice)
-		LOG.Debug("%d", coreMembers.Idle)
-		LOG.Debug("%d", coreMembers.Wait)
-		LOG.Debug("%d", coreMembers.Irq)
-		LOG.Debug("%d", coreMembers.Srq)
+		LOG.Debug("core[%d] System Usage %d", i, coreMembers.Systemmode)
+		LOG.Debug("core[%d] User Usage %d, below", i, coreMembers.Usermode)
+		LOG.Debug("nice %d", coreMembers.Nice)
+		LOG.Debug("idle %d", coreMembers.Idle)
+		LOG.Debug("wait %d", coreMembers.Wait)
+		LOG.Debug("IRQ %d", coreMembers.Irq)
+		LOG.Debug("SRQ %d", coreMembers.Srq)
 	}
 }
-func (c *Cpu) cleaning() {
+func (c *Cpu) clear() {
 	c.Cores = nil
 }
 
 func (c *Cpu) Gathering() []byte {
-	c.cleaning()
+	c.clear()
 
-	contents, err := ioutil.ReadFile("/proc/stat")
+	contents, err := ioutil.ReadFile("/proc/stat") /*Linux cpu 정보*/
 	if err != nil {
 		LOG.Fatal("cant read /proc/stat : %s", err.Error())
 		os.Exit(-1)
@@ -113,7 +111,7 @@ func (c *Cpu) Gathering() []byte {
 }
 
 func (c *Cpu) serialize() []byte {
-	jsonBytes, err := json.MarshalIndent(c, "", "")
+	jsonBytes, err := json.Marshal(c)
 	if err != nil {
 		LOG.Fatal("Marshaling error : %s", err.Error())
 		os.Exit(-1)
@@ -122,6 +120,6 @@ func (c *Cpu) serialize() []byte {
 }
 
 func (c *Cpu) Done(buffer []byte) error {
-	LOG.Info("Cpu gathering, done cap%d, len%d", cap(buffer), len(buffer))
+	LOG.Info("Cpu gathering, done %s", string(buffer))
 	return nil
 }

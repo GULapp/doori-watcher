@@ -3,6 +3,7 @@ package feed
 import (
 	"bufio"
 	LOG "go_monitoring/common/log"
+	"math"
 	"net"
 	"os"
 )
@@ -52,7 +53,7 @@ func (f *Feeder) waitForTcp(address string) {
 		}
 
 		go func(conn net.Conn) {
-			buffers := make([]byte, 4096)
+			buffers := make([]byte, math.MaxInt16)
 			for {
 				n, err := bufio.NewReader(conn).Read(buffers)
 				if err != nil {
@@ -60,8 +61,7 @@ func (f *Feeder) waitForTcp(address string) {
 					conn.Close()
 					return
 				}
-				LOG.Info("Read Len:%d", n)
-				f.bytesBuffer<-buffers /*chan 데이터 보내기*/
+				f.bytesBuffer<-buffers[:n] /*chan 데이터 보내기, 딱 받은 사이즈만큼만, [:n]*/
 			}
 		}(conn)
 	}

@@ -26,7 +26,7 @@ func init() {
 
 func main() {
 	LOG.Info("System Monitoring Agent START")
-	bytesQueue := make(chan []byte, 421)
+	bytesQueue := make(chan []byte)
 
 	//모니터링 대상 객체등록
 	//Cpu, Ram 정보를 가지고 오는 객체등록
@@ -38,11 +38,13 @@ func main() {
 
 	/* monitoring server */
 	go func() {
-		buffer :=<-bytesQueue
-		if err:=feedhandler.Send(conn, buffer); err!= nil {
-			LOG.Fatal("connecting to server error : ", err.Error())
-			conn.Close()
-			os.Exit(-1)
+		for{
+			buffer :=<-bytesQueue
+			if err:=feedhandler.Send(conn, buffer); err!= nil {
+				LOG.Fatal("connecting to server error : ", err.Error())
+				conn.Close()
+				os.Exit(-1)
+			}
 		}
 	}()
 
@@ -55,5 +57,7 @@ func main() {
 		}
 		time.Sleep(1000*time.Millisecond) /*1 second sleep*/
 	}
+
+	LOG.Info("Agent Process is terminated.")
 	os.Exit(0)
 }

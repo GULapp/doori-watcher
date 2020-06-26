@@ -10,6 +10,7 @@ import (
 func main() {
 	LOG.Info("Monitoring SERVER START")
 
+	/*데이터가 들어오면, procTcpData 함수한테 처리하도록 위임. 등록함.*/
 	feeder := feed.NewFeeder(procTcpData)
 
 	/*채널에서 데이터가 수신대기 상태, 데이터 수신시, procTcpData 호출됨*/

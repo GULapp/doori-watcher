@@ -2,9 +2,9 @@ package main
 
 import (
 	"encoding/json"
-	"go_monitoring/agent/system"
-	LOG "go_monitoring/common/log"
-	"go_monitoring/common/feed"
+	"watcher/common/feed"
+	LOG "watcher/common/log"
+	"watcher/objects/system"
 )
 
 func main() {

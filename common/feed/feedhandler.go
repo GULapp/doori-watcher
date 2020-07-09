@@ -1,7 +1,7 @@
 package feed
 
 import (
-	LOG "go_monitoring/common/log"
+	LOG "watcher/common/log"
 	"net"
 	"time"
 )

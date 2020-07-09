@@ -2,7 +2,7 @@ package system
 
 import (
 	"encoding/json"
-	LOG "go_monitoring/common/log"
+	LOG "watcher/common/log"
 	"io/ioutil"
 	"os"
 	"strconv"

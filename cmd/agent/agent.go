@@ -1,13 +1,13 @@
 package main
 
 import (
-	"go_monitoring/agent/system"
-	"go_monitoring/collector"
-	"go_monitoring/common/feed"
-	LOG "go_monitoring/common/log"
 	"net"
 	"os"
 	"time"
+	"watcher/collector"
+	"watcher/common/feed"
+	LOG "watcher/common/log"
+	"watcher/objects/system"
 )
 var(
 	feedhandler *feed.FeedHandler

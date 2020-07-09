@@ -2,10 +2,10 @@ package feed
 
 import (
 	"bufio"
-	LOG "go_monitoring/common/log"
 	"math"
 	"net"
 	"os"
+	LOG "watcher/common/log"
 )
 
 type ProcHandler func(data <-chan []byte)

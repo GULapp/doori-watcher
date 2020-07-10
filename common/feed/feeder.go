@@ -11,20 +11,20 @@ import (
 type ProcHandler func(data <-chan []byte)
 
 type Feeder struct {
-	bytesBuffer chan []byte
-	procData 	ProcHandler
-	conn        *net.Conn
-	err         error
+	DataEventChan chan []byte
+	procData      ProcHandler
+	conn          *net.Conn
+	err           error
 }
 
 /*Feeder로 들어온 데이터를 처리할 함수 type ProcHandler func(chan []byte) 형의 인수로 받아야 함*/
 func NewFeeder(handler ProcHandler) *Feeder {
-	return &Feeder{bytesBuffer: make(chan []byte), procData:handler}
+	return &Feeder{DataEventChan: make(chan []byte), procData: handler}
 }
 
 /*chan 넘겨서, 해당 ProcHandler에게 처리를 위임함*/
 func (f *Feeder) BringupFeeder() {
-	go f.procData(f.bytesBuffer)
+	go f.procData(f.DataEventChan)
 }
 
 func (f *Feeder) WaitFor(commType string, address string) {
@@ -55,13 +55,14 @@ func (f *Feeder) waitForTcp(address string) {
 		go func(conn net.Conn) {
 			buffers := make([]byte, math.MaxInt16)
 			for {
-				n, err := bufio.NewReader(conn).Read(buffers)
-				if err != nil {
+				n, err := bufio.NewReader(conn).Read(buffers[:4])
+				if err != nil || n != 4 {
 					LOG.Error("Read() error %s", err.Error())
 					conn.Close()
 					return
 				}
-				f.bytesBuffer<-buffers[:n] /*chan 데이터 보내기, 딱 받은 사이즈만큼만, [:n]*/
+
+				f.DataEventChan <- buffers[:n] /*chan 데이터 보내기, 딱 받은 사이즈만큼만, [:n]*/
 			}
 		}(conn)
 	}

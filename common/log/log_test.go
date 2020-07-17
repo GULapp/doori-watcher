@@ -1,0 +1,21 @@
+package common
+
+import (
+	"testing"
+)
+
+var (
+	testLog *Log
+)
+
+func TestNewDrLog(t *testing.T) {
+	testLog = NewDrLog("./log", 0744)
+}
+
+func TestDrLog_Debug(t *testing.T) {
+	testLog = NewDrLog("./log", 0744)
+	testLog.Debug("debug %d\n", 100)
+	testLog.Info("info %f\n", 0.0003)
+	testLog.Fatal("fatal %s\n", "leejaeseong")
+	testLog.Trace("bug1", "check value [%d]\n", 2000)
+}

@@ -20,12 +20,14 @@ func init() {
 	conn, err = feedhandler.Connect("localhost:12345")
 	if err != nil {
 		LOG.Fatal("failed to Call FeedHandler : %s", err.Error())
-		os.Exit(-1)
+		//os.Exit(-1)
 	}
 }
 
 func main() {
+	LOG.Init("/tmp/hahahahah.log",0744)
 	LOG.Info("System Monitoring Agent START")
+	os.Exit(-1)
 	bytesQueue := make(chan []byte)
 
 	//모니터링 대상 객체등록

@@ -7,6 +7,11 @@ import (
 	"watcher/objects/system"
 )
 
+func init() {
+	//LOG initialize.
+	LOG.Init("/tmp/server.log", LOG.ERROR, 0744)
+}
+
 func main() {
 	LOG.Info("Monitoring SERVER START")
 
@@ -27,7 +32,7 @@ func procTcpData(dataQeueue <-chan []byte) {
 
 		var cpuinfo system.Cpu
 		/*역직렬화*/
-		err := json.Unmarshal(messages[:len(messages)],&cpuinfo)
+		err := json.Unmarshal(messages[:len(messages)], &cpuinfo)
 		if err != nil {
 			LOG.Error("Unmarshal error : %s", err.Error())
 		}

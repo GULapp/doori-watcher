@@ -10,24 +10,35 @@ import (
 	"watcher/objects/system"
 )
 var(
-	feedhandler *feed.FeedHandler
-	conn net.Conn
+	gFeedHandler *feed.FeedHandler
+	gConn        net.Conn
 )
 
 func init() {
+	//LOG initialize.
+	LOG.Init("/tmp/agent.log", LOG.ERROR,0744)
+}
+
+func connectFeeder() error{
 	var err error
-	feedhandler = feed.NewFeedHandler()
-	conn, err = feedhandler.Connect("localhost:12345")
+	gFeedHandler = feed.NewFeedHandler()
+	//to Feeder
+	gConn, err = gFeedHandler.Connect("localhost:12345")
 	if err != nil {
 		LOG.Fatal("failed to Call FeedHandler : %s", err.Error())
-		//os.Exit(-1)
+		return err
 	}
+	return nil
 }
 
 func main() {
-	LOG.Init("/tmp/hahahahah.log",0744)
 	LOG.Info("System Monitoring Agent START")
-	os.Exit(-1)
+
+	if err := connectFeeder(); err != nil {
+		LOG.Fatal("failed to connect Feeder %s",err.Error())
+		os.Exit(-1)
+	}
+
 	bytesQueue := make(chan []byte)
 
 	//모니터링 대상 객체등록
@@ -42,9 +53,9 @@ func main() {
 	go func() {
 		for{
 			buffer :=<-bytesQueue
-			if err:=feedhandler.Send(conn, buffer); err!= nil {
+			if err:= gFeedHandler.Send(gConn, buffer); err!= nil {
 				LOG.Fatal("connecting to server error : ", err.Error())
-				conn.Close()
+				gConn.Close()
 				os.Exit(-1)
 			}
 		}

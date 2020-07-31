@@ -2,7 +2,8 @@ package feed
 
 import (
 	"bufio"
-	"math"
+	"encoding/binary"
+	"io"
 	"net"
 	"os"
 	LOG "watcher/common/log"
@@ -53,16 +54,26 @@ func (f *Feeder) waitForTcp(address string) {
 		}
 
 		go func(conn net.Conn) {
-			buffers := make([]byte, math.MaxInt16)
+			reader:=bufio.NewReader(conn)
 			for {
-				n, err := bufio.NewReader(conn).Read(buffers[:4])
-				if err != nil || n != 4 {
+				//들어온 데이터의 총길이가 다 도착할까지 blocking처리
+				dataBufferLen := make([]byte,2)
+				n, err :=io.ReadFull(reader,dataBufferLen)
+				if err != nil || n != 2 {
 					LOG.Error("Read() error %s", err.Error())
 					conn.Close()
 					return
 				}
-
-				f.DataEventChan <- buffers[:n] /*chan 데이터 보내기, 딱 받은 사이즈만큼만, [:n]*/
+				//나머지 데이터가 들어올때까지 대기
+				bodyLength := binary.LittleEndian.Uint16(dataBufferLen)
+				dataBufferBody := make([]byte,bodyLength)
+				n, err = io.ReadFull(reader,dataBufferBody)
+				if err != nil || uint16(n) != bodyLength {
+					LOG.Error("Read() error %s", err.Error())
+					conn.Close()
+					return
+				}
+				f.DataEventChan <- dataBufferBody /*chan 데이터 보내기, 딱 받은 사이즈만큼만, [:n]*/
 			}
 		}(conn)
 	}

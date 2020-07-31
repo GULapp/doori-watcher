@@ -12,7 +12,7 @@ import (
 // FeedHander는 데이터를 수신 시, 데이터의 총 사이즈를 먼저 읽고,
 // 다 읽을 때까지 기다려야 한다.(Timeout)
 type DataContainer struct {
-	streamLen int
+	streamLen uint16
 	stream    []byte
 }
 
@@ -26,7 +26,7 @@ func NewFeedHandler() *FeedHandler {
 func (s *FeedHandler) Send(conn net.Conn, streamBuffer []byte) error {
 	var buffer bytes.Buffer
 	enc := gob.NewEncoder(&buffer)
-	enc.Encode(DataContainer{len(streamBuffer), streamBuffer})
+	enc.Encode(DataContainer{uint16(len(streamBuffer)), streamBuffer})
 
 	writedLen, err := conn.Write(buffer.Bytes())
 	if writedLen < len(streamBuffer) {

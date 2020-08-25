@@ -1,18 +1,16 @@
 package feed
 
 import (
-	"bufio"
-	"encoding/binary"
-	"io"
+	"encoding/json"
 	"net"
 	"os"
 	LOG "watcher/common/log"
 )
 
-type ProcHandler func(data <-chan []byte)
+type ProcHandler func(data <-chan json.RawMessage)
 
 type Feeder struct {
-	DataEventChan chan []byte
+	DataEventChan chan json.RawMessage
 	procData      ProcHandler
 	conn          *net.Conn
 	err           error
@@ -20,7 +18,7 @@ type Feeder struct {
 
 /*Feeder로 들어온 데이터를 처리할 함수 type ProcHandler func(chan []byte) 형의 인수로 받아야 함*/
 func NewFeeder(handler ProcHandler) *Feeder {
-	return &Feeder{DataEventChan: make(chan []byte), procData: handler}
+	return &Feeder{DataEventChan: make(chan json.RawMessage), procData: handler}
 }
 
 /*chan 넘겨서, 해당 ProcHandler에게 처리를 위임함*/
@@ -54,26 +52,15 @@ func (f *Feeder) waitForTcp(address string) {
 		}
 
 		go func(conn net.Conn) {
-			reader:=bufio.NewReader(conn)
+			decoder := json.NewDecoder(conn)
 			for {
-				//들어온 데이터의 총길이가 다 도착할까지 blocking처리
-				dataBufferLen := make([]byte,2)
-				n, err :=io.ReadFull(reader,dataBufferLen)
-				if err != nil || n != 2 {
-					LOG.Error("Read() error %s", err.Error())
-					conn.Close()
+				var recvMesg json.RawMessage
+
+				err := decoder.Decode(&recvMesg)
+				if err != nil {
 					return
 				}
-				//나머지 데이터가 들어올때까지 대기
-				bodyLength := binary.LittleEndian.Uint16(dataBufferLen)
-				dataBufferBody := make([]byte,bodyLength)
-				n, err = io.ReadFull(reader,dataBufferBody)
-				if err != nil || uint16(n) != bodyLength {
-					LOG.Error("Read() error %s", err.Error())
-					conn.Close()
-					return
-				}
-				f.DataEventChan <- dataBufferBody /*chan 데이터 보내기, 딱 받은 사이즈만큼만, [:n]*/
+				f.DataEventChan <- recvMesg /*chan 데이터 보내기, 딱 받은 사이즈만큼만, [:n]*/
 			}
 		}(conn)
 	}

@@ -1,19 +1,17 @@
 package feed
 
 import (
-	"bytes"
-	"encoding/gob"
+	"encoding/json"
 	"net"
 	"time"
 	LOG "watcher/common/log"
 )
 
-// 데이터를 주고 받을 때, 데이터의 총 사이즈의 정보가 필요하다.
-// FeedHander는 데이터를 수신 시, 데이터의 총 사이즈를 먼저 읽고,
-// 다 읽을 때까지 기다려야 한다.(Timeout)
+// 데이터를 보낼 때, 데이터의 형식의 이름과, 데이터타입을 그대로 보내기 위한
+// 소켓 컨테이너 구조체다. DataObject 는 구조체로, Json tag가 존재해야 한다.
 type DataContainer struct {
-	streamLen uint16
-	stream    []byte
+	ObjectName string `json:"name"`
+	ObjectData json.RawMessage `json:"data"`
 }
 
 type FeedHandler struct {
@@ -23,19 +21,19 @@ func NewFeedHandler() *FeedHandler {
 	return &FeedHandler{}
 }
 
-func (s *FeedHandler) Send(conn net.Conn, streamBuffer []byte) error {
-	var buffer bytes.Buffer
-	enc := gob.NewEncoder(&buffer)
-	enc.Encode(DataContainer{uint16(len(streamBuffer)), streamBuffer})
+// conn객체를 이용해서 streamBuffer에 저장된 바이트 데이터를 보냅니다.
+func (s *FeedHandler) Send(conn net.Conn, jsonBytes DataContainer) error {
+	encoder := json.NewEncoder(conn)
 
-	writedLen, err := conn.Write(buffer.Bytes())
-	if writedLen < len(streamBuffer) {
-		LOG.Fatal("wrong size")
+	err := encoder.Encode(jsonBytes)
+	if err != nil {
+		LOG.Error("Encode fail.:", err.Error())
 		return err
 	}
 	return nil
 }
 
+// address에 tcp 연결합니다.
 func (s *FeedHandler) Connect(address string) (net.Conn, error) {
 	conn, err := net.DialTimeout("tcp", address, 1000*time.Millisecond)
 	if err != nil {

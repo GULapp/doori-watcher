@@ -39,7 +39,7 @@ func main() {
 		os.Exit(-1)
 	}
 
-	bytesQueue := make(chan []byte)
+	bytesQueue := make(chan feed.DataContainer)
 
 	//모니터링 대상 객체등록
 	//Cpu, Ram 정보를 가지고 오는 객체등록
@@ -63,10 +63,10 @@ func main() {
 
 	for {
 		for _, g := range collection {
-			stream := g.Gathering() //데이터수집
+			outputJson := g.Gathering() //데이터수집
 			g.PrettyPrint()
-			bytesQueue <- stream
-			g.Done(stream) //수집된 데이터를 처리.
+			bytesQueue <- feed.DataContainer{"Cpu", outputJson}
+			g.Done(outputJson) //수집된 데이터를 처리.
 		}
 		time.Sleep(1000*time.Millisecond) /*1 second sleep*/
 	}

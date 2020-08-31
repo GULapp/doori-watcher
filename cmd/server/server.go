@@ -12,7 +12,7 @@ import (
 
 func init() {
 	//LOG initialize.
-	LOG.Init("/tmp/server.log", LOG.TRACE, 0744)
+	LOG.Init("/tmp/server.log", LOG.ERROR, 0744)
 }
 
 func main() {

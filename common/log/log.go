@@ -26,8 +26,8 @@ type LEVEL int
 const (
 	TRACE   LEVEL = 0 + iota//0
 	DEBUG   //1
-	ERROR   //2
-	INFO    //3
+	INFO    //2
+	ERROR   //3
 	FATAL   //4
 )
 
@@ -67,7 +67,7 @@ func Init(filepath string, loglevel LEVEL, perm os.FileMode) {
 	if logfileName != filepath {
 		fileMemory, err := ioutil.ReadFile(logfileName)
 		if err != nil {
-			createLogfile(filepath, perm)
+			createLogfile(filepath, loglevel, perm)
 			return
 		} else {
 			if err := os.Remove(logfileName); err != nil {
@@ -78,10 +78,9 @@ func Init(filepath string, loglevel LEVEL, perm os.FileMode) {
 
 		logfileName = filepath
 		logfilePerm = perm
-		level = loglevel
 		instance = nil
 
-		createLogfile(filepath, perm)
+		createLogfile(filepath, loglevel, perm)
 
 		// 로그파일명을 지정하지 않고, main 패키지 이전에 다른 곳에서
 		// 로그를 남기는 함수를 호출 할 경우, 임시로 만들어진 로그파일명에다가 기록한다.
@@ -92,11 +91,11 @@ func Init(filepath string, loglevel LEVEL, perm os.FileMode) {
 			os.Exit(-1)
 		}
 	} else {
-		createLogfile(filepath, perm)
+		createLogfile(filepath, loglevel, perm)
 	}
 }
 
-func createLogfile(filepath string, perm os.FileMode) {
+func createLogfile(filepath string, loglevel LEVEL, perm os.FileMode) {
 	file, err := os.OpenFile(filepath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, perm)
 	if err != nil {
 		fmt.Errorf("failed to open a logfile")
@@ -104,6 +103,7 @@ func createLogfile(filepath string, perm os.FileMode) {
 	}
 	logger := log.New(file, "INFO", kLogflag)
 	instance = &Log{customLogger: logger}
+	level = loglevel
 }
 
 func Trace(tempPrefix string, format string, v ...interface{}) {

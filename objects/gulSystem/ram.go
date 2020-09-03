@@ -1,4 +1,4 @@
-package system
+package gulSystem
 
 type Ram struct {
 	Usermode   uint32 `json:"usermode"`

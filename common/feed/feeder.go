@@ -1,4 +1,4 @@
-package gulFeed
+package feed
 
 import (
 	"encoding/json"

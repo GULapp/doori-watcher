@@ -1,14 +1,16 @@
-package gulSystem
+package system
 
 import (
 	"encoding/json"
-	LOG "watcher/common/log"
 	"io/ioutil"
 	"os"
+	"reflect"
 	"strconv"
 	"strings"
+	LOG "watcher/common/log"
 )
 
+// json:"-" 는, Marshaling할때, 무시됨. 즉 추가되지 않음.
 type Cpu struct {
 	Totalusermode   uint32 `json:"totalusermode"`
 	Totalsystemmode uint32 `json:"totalsystemmode"`
@@ -31,24 +33,32 @@ type cpuCore struct {
 	Srq        uint32 `json:"-"`
 }
 
-func (c *Cpu) PrettyPrint() {
-	LOG.Debug("Total System Cpu Usage %d", c.Totalsystemmode)
-	LOG.Debug("Total User Cpu Usage %d", c.Totalusermode)
-	LOG.Debug("Total nice %d", c.Totalnice)
-	LOG.Debug("Total idle %d", c.Totalidle)
-	LOG.Debug("Total wait %d", c.Totalwait)
-	LOG.Debug("Total IRQ %d", c.Totalirq)
-	LOG.Debug("Total SRQ %d", c.Totalsrq)
+func (c Cpu) PrettyPrint() {
+	ref := reflect.ValueOf(c)
+	elements := ref.Elem()
 
-	for i, coreMembers := range c.Cores {
-		LOG.Debug("core[%d] System Usage %d", i, coreMembers.Systemmode)
-		LOG.Debug("core[%d] User Usage %d, below", i, coreMembers.Usermode)
-		LOG.Debug("nice %d", coreMembers.Nice)
-		LOG.Debug("idle %d", coreMembers.Idle)
-		LOG.Debug("wait %d", coreMembers.Wait)
-		LOG.Debug("IRQ %d", coreMembers.Irq)
-		LOG.Debug("SRQ %d", coreMembers.Srq)
+	for i := 0; i < elements.NumField(); i++ {
+		value := elements.Field(i)
+		field := elements.Type().Field(i)
+		switch field.Tag.Get("json") {
+		case "-":
+		default:
+			if field.Name == "cpuCore" {
+				LOG.Debug("cpuCore")
+			} else {
+				LOG.Debug("Total %-10s : %v", field.Name, value.Interface())
+			}
+		}
 	}
+	//for i, coreMembers := range c.Cores {
+	//	LOG.Debug("core[%d] System Usage %d", i, coreMembers.Systemmode)
+	//	LOG.Debug("core[%d] User Usage %d, below", i, coreMembers.Usermode)
+	//	LOG.Debug("nice %d", coreMembers.Nice)
+	//	LOG.Debug("idle %d", coreMembers.Idle)
+	//	LOG.Debug("wait %d", coreMembers.Wait)
+	//	LOG.Debug("IRQ %d", coreMembers.Irq)
+	//	LOG.Debug("SRQ %d", coreMembers.Srq)
+	//}
 }
 func (c *Cpu) clear() {
 	c.Cores = nil

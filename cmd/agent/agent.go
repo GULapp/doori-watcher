@@ -4,13 +4,13 @@ import (
 	"net"
 	"os"
 	"time"
-	"watcher/gulCollector"
-	"watcher/common/gulFeed"
+	"watcher/collector"
+	"watcher/common/feed"
 	LOG "watcher/common/log"
-	"watcher/objects/gulSystem"
+	"watcher/objects/system"
 )
 var(
-	gFeedHandler *gulFeed.FeedHandler
+	gFeedHandler *feed.FeedHandler
 	gConn        net.Conn
 )
 
@@ -21,7 +21,7 @@ func init() {
 
 func connectFeeder() error{
 	var err error
-	gFeedHandler = gulFeed.NewFeedHandler()
+	gFeedHandler = feed.NewFeedHandler()
 	//to Feeder
 	gConn, err = gFeedHandler.Connect("localhost:12345")
 	if err != nil {
@@ -39,15 +39,15 @@ func main() {
 		os.Exit(-1)
 	}
 
-	bytesQueue := make(chan gulFeed.DataContainer)
+	bytesQueue := make(chan feed.DataContainer)
 
 	//모니터링 대상 객체등록
 	//Cpu, Ram 정보를 가지고 오는 객체등록
 	//gather.go 에 정의된 인터페이스 정의 되어 있어햠
 	//gathering 데이터를 수집하고, 결과를 []byte 리턴하는 함수
 	//Done []byte를 입력받아 그 다음을 처리하는 함수
-	var collection []gulCollector.Gather
-	collection = append(collection, &gulSystem.Cpu{})
+	var collection []collector.Gather
+	collection = append(collection, &system.Cpu{})
 
 	/* monitoring server */
 	go func() {
@@ -65,7 +65,7 @@ func main() {
 		for _, g := range collection {
 			outputJson := g.Gathering() //데이터수집
 			g.PrettyPrint()
-			bytesQueue <- gulFeed.DataContainer{"Cpu", outputJson}
+			bytesQueue <- feed.DataContainer{"Cpu", outputJson}
 			g.Done(outputJson) //수집된 데이터를 처리.
 		}
 		time.Sleep(1000*time.Millisecond) /*1 second sleep*/

@@ -2,10 +2,10 @@ package main
 
 import (
 	"encoding/json"
-	"watcher/objects/gulSystem"
+	"watcher/objects/system"
 
 	//"encoding/json"
-	"watcher/common/gulFeed"
+	"watcher/common/feed"
 	LOG "watcher/common/log"
 	//"watcher/objects/system"
 )
@@ -19,7 +19,7 @@ func main() {
 	LOG.Info("Monitoring SERVER START")
 
 	/*데이터가 들어오면, procTcpData 함수한테 처리하도록 위임. 등록함.*/
-	feeder := gulFeed.NewFeeder(procTcpData)
+	feeder := feed.NewFeeder(procTcpData)
 
 	/*채널에서 데이터가 수신대기 상태, 데이터 수신시, procTcpData 호출됨*/
 	feeder.BringupFeeder()
@@ -32,8 +32,8 @@ func procTcpData(dataQeueue <-chan json.RawMessage) {
 	for {
 		messages := <-dataQeueue /*채널에서 데이터가 수신되면 다시 message 변수에 전달*/
 
-		var inputMessage gulFeed.DataContainer
-		var cpuinfo gulSystem.Cpu
+		var inputMessage feed.DataContainer
+		var cpuinfo system.Cpu
 		/*역직렬화*/
 		err := json.Unmarshal(messages, &inputMessage)
 		if err != nil {

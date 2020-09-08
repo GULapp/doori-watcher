@@ -1,4 +1,4 @@
-package gulCollector
+package collector
 
 var gathers []Gather
 

@@ -1,4 +1,4 @@
-package gulLog
+package log
 
 import (
 	"testing"

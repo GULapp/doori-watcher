@@ -11,6 +11,7 @@ import (
 )
 
 // json:"-" 는, Marshaling할때, 무시됨. 즉 추가되지 않음.
+// json Marshaling를 위해서는 멤버는 exported 형태(노출되어야) 대문자여야 한다.
 type Cpu struct {
 	Totalusermode   uint32 `json:"totalusermode"`
 	Totalsystemmode uint32 `json:"totalsystemmode"`
@@ -19,11 +20,11 @@ type Cpu struct {
 	Totalwait       uint32 `json:"-"`
 	Totalirq        uint32 `json:"-"`
 	Totalsrq        uint32 `json:"-"`
-	Cores           []cpuCore
+	Cores           []Core
 }
 
-type cpuCore struct {
-	Corenum    uint32 `json:corenum`
+type Core struct {
+	Corenum    uint32 `json:"corenum"`
 	Usermode   uint32 `json:"usermode"`
 	Systemmode uint32 `json:"systemmode"`
 	Nice       uint32 `json:"-"`
@@ -33,7 +34,7 @@ type cpuCore struct {
 	Srq        uint32 `json:"-"`
 }
 
-func (c Cpu) PrettyPrint() {
+func (c *Cpu) PrettyPrint() {
 	ref := reflect.ValueOf(c)
 	elements := ref.Elem()
 
@@ -43,8 +44,9 @@ func (c Cpu) PrettyPrint() {
 		switch field.Tag.Get("json") {
 		case "-":
 		default:
-			if field.Name == "cpuCore" {
-				LOG.Debug("cpuCore")
+			if field.Name == "Cores" {
+				LOG.Debug("Cores")
+				cores := value.Interface()
 			} else {
 				LOG.Debug("Total %-10s : %v", field.Name, value.Interface())
 			}
@@ -96,7 +98,7 @@ func (c *Cpu) Gathering() []byte {
 				c.Totalirq = uint32(Totalirq)
 				c.Totalsrq = uint32(Totalsrq)
 			} else {
-				var cpuCore cpuCore
+				var cpuCore Core
 				Usermode, _ := strconv.ParseUint(fields[1], 10, 32)
 				Systemmode, _ := strconv.ParseUint(fields[2], 10, 32)
 				Nice, _ := strconv.ParseUint(fields[3], 10, 32)

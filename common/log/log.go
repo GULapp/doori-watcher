@@ -33,7 +33,7 @@ const (
 
 var (
 	instance        *Log
-	initCallOnce	bool
+	initCallOnce    bool
 	logFullPathFile string
 	logfilePerm     os.FileMode
 	level           LEVEL

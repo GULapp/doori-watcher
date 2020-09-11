@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
-	"reflect"
 	"strconv"
 	"strings"
+	"watcher/common"
 	LOG "watcher/common/log"
 )
 
@@ -35,32 +35,7 @@ type Core struct {
 }
 
 func (c *Cpu) PrettyPrint() {
-	ref := reflect.ValueOf(c)
-	elements := ref.Elem()
-
-	for i := 0; i < elements.NumField(); i++ {
-		value := elements.Field(i)
-		field := elements.Type().Field(i)
-		switch field.Tag.Get("json") {
-		case "-":
-		default:
-			if field.Name == "Cores" {
-				LOG.Debug("Cores")
-				cores := value.Interface()
-			} else {
-				LOG.Debug("Total %-10s : %v", field.Name, value.Interface())
-			}
-		}
-	}
-	//for i, coreMembers := range c.Cores {
-	//	LOG.Debug("core[%d] System Usage %d", i, coreMembers.Systemmode)
-	//	LOG.Debug("core[%d] User Usage %d, below", i, coreMembers.Usermode)
-	//	LOG.Debug("nice %d", coreMembers.Nice)
-	//	LOG.Debug("idle %d", coreMembers.Idle)
-	//	LOG.Debug("wait %d", coreMembers.Wait)
-	//	LOG.Debug("IRQ %d", coreMembers.Irq)
-	//	LOG.Debug("SRQ %d", coreMembers.Srq)
-	//}
+	common.PrintAsStructForJson(c)
 }
 func (c *Cpu) clear() {
 	c.Cores = nil

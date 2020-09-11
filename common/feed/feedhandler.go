@@ -10,7 +10,7 @@ import (
 // 데이터를 보낼 때, 데이터의 형식의 이름과, 데이터타입을 그대로 보내기 위한
 // 소켓 컨테이너 구조체다. DataObject 는 구조체로, Json tag가 존재해야 한다.
 type DataContainer struct {
-	ObjectName string `json:"name"`
+	ObjectName string          `json:"name"`
 	ObjectData json.RawMessage `json:"data"`
 }
 

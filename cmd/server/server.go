@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"os"
 	"watcher/objects/system"
 
 	//"encoding/json"
@@ -12,7 +13,7 @@ import (
 
 func init() {
 	//LOG initialize.
-	LOG.Init("/tmp/hahamyserver.log", LOG.TRACE, 0744)
+	LOG.Init("/tmp/server.log", LOG.TRACE, 0744)
 }
 
 func main() {
@@ -33,17 +34,27 @@ func procTcpData(dataQeueue <-chan json.RawMessage) {
 		messages := <-dataQeueue /*채널에서 데이터가 수신되면 다시 message 변수에 전달*/
 
 		var inputMessage feed.DataContainer
-		var cpuinfo system.Cpu
 		/*역직렬화*/
 		err := json.Unmarshal(messages, &inputMessage)
 		if err != nil {
 			LOG.Error("Unmarshal error : %s", err.Error())
 		}
 		LOG.Debug("Receive Type:", string(inputMessage.ObjectName))
-		err = json.Unmarshal(inputMessage.ObjectData, &cpuinfo)
-		if err != nil {
-			LOG.Error("Unmarshal error : %s", err.Error())
+
+		var TR string
+		TR = string(inputMessage.ObjectName)
+
+		switch TR {
+		case "Cpu":
+			var cpuinfo system.Cpu
+			err = json.Unmarshal(inputMessage.ObjectData, &cpuinfo)
+			if err != nil {
+				LOG.Error("Unmarshal error : %s", err.Error())
+			}
+			cpuinfo.PrettyPrint()
+		default:
+			LOG.Error("unknown TR")
+			os.Exit(-1)
 		}
-		cpuinfo.PrettyPrint()
 	}
 }

@@ -19,7 +19,8 @@ func PrintAsStruct(st interface{}) {
 }
 
 // 구조체 변수입력 받으면,
-// Json Tag가 정의되어 있는 변수만 출력하는 함수
+// Json Tag 정보가 있는 변수만 출력하는 함수
+// 만약에 Tag `json:"-"` 이면 출력무시
 func PrintAsStructForJson(st interface{}) {
 	ref := reflect.ValueOf(st)
 	elements := ref.Elem()

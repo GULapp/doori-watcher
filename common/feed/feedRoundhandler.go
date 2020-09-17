@@ -24,7 +24,7 @@ func NewFeedRoundHandler(bindingAddress string) *FeedRoundHandler {
 }
 
 // conn객체를 이용해서 streamBuffer에 저장된 바이트 데이터를 보냅니다.
-func (s *FeedRoundHandler) Send(jsonBytes DataContainer) error {
+func (s *FeedRoundHandler) Send(jsonBytes json.RawMessage) error {
 	s.mutex.Lock()
 
 	for _, sock := range s.connectedSocks {

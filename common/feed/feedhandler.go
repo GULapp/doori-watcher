@@ -7,13 +7,6 @@ import (
 	LOG "watcher/common/log"
 )
 
-// 데이터를 보낼 때, 데이터의 형식의 이름과, 데이터타입을 그대로 보내기 위한
-// 소켓 컨테이너 구조체다. DataObject 는 구조체로, Json tag가 존재해야 한다.
-type DataContainer struct {
-	ObjectName string          `json:"name"`
-	ObjectData json.RawMessage `json:"data"`
-}
-
 type FeedHandler struct {
 }
 
@@ -22,7 +15,7 @@ func NewFeedHandler() *FeedHandler {
 }
 
 // conn객체를 이용해서 streamBuffer에 저장된 바이트 데이터를 보냅니다.
-func (s *FeedHandler) Send(conn net.Conn, jsonBytes DataContainer) error {
+func (s *FeedHandler) Send(conn net.Conn, jsonBytes json.RawMessage) error {
 	encoder := json.NewEncoder(conn)
 
 	err := encoder.Encode(jsonBytes)

@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"os"
+	"watcher/common"
 	"watcher/objects/system"
 
 	//"encoding/json"
@@ -19,35 +20,34 @@ func init() {
 func main() {
 	LOG.Info("Monitoring SERVER START")
 
-	/*데이터가 들어오면, procTcpData 함수한테 처리하도록 위임. 등록함.*/
+	/*데이터가 들어오면, procTcpData 함수한테 처리하도록 위임. 콜백 등록함.*/
 	feeder := feed.NewFeeder(procTcpData)
 
-	/*채널에서 데이터가 수신대기 상태, 데이터 수신시, procTcpData 호출됨*/
+	/*데이터가 오기를 기다리는 상태(채널 수신이벤트 기다림), procTcpData 호출됨*/
 	feeder.BringupFeeder()
 
-	/*소켓을 열고, agent로부터 연결을 기다린다. 연결이 완료되고, 데이터 수신이 되면, 채널로 데이터보내기 */
+	/*데이터를 수신용, 통신 열기*/
 	feeder.WaitFor("tcp", "localhost:12345")
 }
 
 func procTcpData(dataQeueue <-chan json.RawMessage) {
 	for {
-		messages := <-dataQeueue /*채널에서 데이터가 수신되면 다시 message 변수에 전달*/
+		var inputMessage common.Protocol
 
-		var inputMessage feed.DataContainer
-		/*역직렬화*/
+		messages := <-dataQeueue /*채널에서 데이터가 수신*/
+		/*Protocol 구조체로 역직렬화*/
 		err := json.Unmarshal(messages, &inputMessage)
 		if err != nil {
 			LOG.Error("Unmarshal error : %s", err.Error())
 		}
-		LOG.Debug("Receive Type:", string(inputMessage.ObjectName))
+		LOG.Debug("Receive Type:%s", inputMessage.Body.Tr)
 
-		var TR string
-		TR = string(inputMessage.ObjectName)
+		TR := inputMessage.Body.Tr
 
 		switch TR {
 		case "Cpu":
 			var cpuinfo system.Cpu
-			err = json.Unmarshal(inputMessage.ObjectData, &cpuinfo)
+			err = json.Unmarshal(inputMessage.Body.Data, &cpuinfo)
 			if err != nil {
 				LOG.Error("Unmarshal error : %s", err.Error())
 			}

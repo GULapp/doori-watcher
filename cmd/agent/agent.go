@@ -1,10 +1,12 @@
 package main
 
 import (
+	"encoding/json"
 	"net"
 	"os"
 	"time"
 	"watcher/collector"
+	"watcher/common"
 	"watcher/common/feed"
 	LOG "watcher/common/log"
 	"watcher/objects/system"
@@ -40,7 +42,7 @@ func main() {
 		os.Exit(-1)
 	}
 
-	bytesQueue := make(chan feed.DataContainer)
+	bytesQueue := make(chan json.RawMessage)
 
 	//모니터링 대상 객체등록
 	//Cpu, Ram 정보를 가지고 오는 객체등록
@@ -62,11 +64,16 @@ func main() {
 		}
 	}()
 
+	protocol := common.Protocol{}
+	protocol.Init("local","127.0.0.1","system")
+
 	for {
 		for _, g := range collection {
 			outputJson := g.Gathering() //데이터수집
 			g.PrettyPrint()
-			bytesQueue <- feed.DataContainer{"Cpu", outputJson}
+			protocol.Set("Cpu", outputJson)
+			marshalingBytes, _ := protocol.Marshaling()
+			bytesQueue <- marshalingBytes
 			g.Done(outputJson) //수집된 데이터를 처리.
 		}
 		time.Sleep(1000 * time.Millisecond) /*1 second sleep*/

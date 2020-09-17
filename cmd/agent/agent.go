@@ -9,7 +9,7 @@ import (
 	"watcher/common"
 	"watcher/common/feed"
 	LOG "watcher/common/log"
-	"watcher/objects/system"
+	"watcher/category/system"
 )
 
 var (

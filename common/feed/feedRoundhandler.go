@@ -14,6 +14,7 @@ type FeedRoundHandler struct {
 	mutex          sync.Mutex
 }
 
+// Client로부터 connect 요청을 대기할 port 바인딩 값이 필요함
 func NewFeedRoundHandler(bindingAddress string) *FeedRoundHandler {
 	listener, err := net.Listen("tcp", bindingAddress)
 	if err != nil {
@@ -26,6 +27,7 @@ func NewFeedRoundHandler(bindingAddress string) *FeedRoundHandler {
 // conn객체를 이용해서 streamBuffer에 저장된 바이트 데이터를 보냅니다.
 func (s *FeedRoundHandler) Send(jsonBytes json.RawMessage) error {
 	s.mutex.Lock()
+	defer s.mutex.Unlock()
 
 	for _, sock := range s.connectedSocks {
 		encoder := json.NewEncoder(sock)
@@ -41,7 +43,7 @@ func (s *FeedRoundHandler) Send(jsonBytes json.RawMessage) error {
 	return nil
 }
 
-// address에 tcp 연결합니다.
+// Client로부터 connect을 대기함
 func (s *FeedRoundHandler) WaitFor() {
 	go func() {
 		conn, err := s.listener.Accept()
@@ -51,6 +53,7 @@ func (s *FeedRoundHandler) WaitFor() {
 			os.Exit(-1)
 		}
 		s.mutex.Lock()
+		defer s.mutex.Unlock()
 		s.connectedSocks = append(s.connectedSocks, conn)
 		s.mutex.Unlock()
 	}()

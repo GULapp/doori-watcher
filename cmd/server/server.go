@@ -20,7 +20,8 @@ func init() {
 func main() {
 	LOG.Info("Monitoring SERVER START")
 
-	forClients := feed.FeedRoundHandler{}
+	forClients := feed.NewFeedRoundHandler("localhost:55555")
+	forClients.WaitFor()
 
 	/*데이터가 들어오면, procTcpData 함수한테 처리하도록 위임. 콜백 등록함.*/
 	forAgents := feed.NewFeeder(procTcpData)

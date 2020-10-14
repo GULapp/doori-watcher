@@ -2,9 +2,9 @@ package system
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
-	"strconv"
 	"strings"
 	"watcher/common"
 	LOG "watcher/common/log"
@@ -13,36 +13,38 @@ import (
 // json:"-" 는, Marshaling할때, 무시됨. 즉 추가되지 않음.
 // json Marshaling를 위해서는 멤버는 exported 형태(노출되어야) 대문자여야 한다.
 type Cpu struct {
-	Totalusermode   uint32 `json:"totalusermode"`
-	Totalsystemmode uint32 `json:"totalsystemmode"`
-	Totalnice       uint32 `json:"-"`
-	Totalidle       uint32 `json:"-"`
-	Totalwait       uint32 `json:"-"`
-	Totalirq        uint32 `json:"-"`
-	Totalsrq        uint32 `json:"-"`
-	Cores           []Core
+	CpuUsage   int `json:"totalusage"`
+	Usermode   int `json:"-"`
+	Systemmode int `json:"-"`
+	Nice       int `json:"-"`
+	Idle       int `json:"-"`
+	Wait       int `json:"-"`
+	Irq        int `json:"-"`
+	Srq        int `json:"-"`
+	Cores      []Core
 }
 
 type Core struct {
-	Corenum    uint32 `json:"corenum"`
-	Usermode   uint32 `json:"usermode"`
-	Systemmode uint32 `json:"systemmode"`
-	Nice       uint32 `json:"-"`
-	Idle       uint32 `json:"-"`
-	Wait       uint32 `json:"-"`
-	Irq        uint32 `json:"-"`
-	Srq        uint32 `json:"-"`
+	Corename   string `json:"corename"`
+	Coreusage  int    `json:"usage"`
+	Usermode   int    `json:"-"`
+	Systemmode int    `json:"-"`
+	Nice       int    `json:"-"`
+	Idle       int    `json:"-"`
+	Wait       int    `json:"-"`
+	Irq        int    `json:"-"`
+	Srq        int    `json:"-"`
 }
 
 func (c *Cpu) PrettyPrint() {
 	common.PrintAsStructForJson(c)
 }
-func (c *Cpu) clear() {
-	c.Cores = nil
-}
 
 func (c *Cpu) Gathering() []byte {
-	c.clear()
+	var oldCpu Cpu
+	oldCores := make([]Core, len(c.Cores))
+
+	copy(oldCores, c.Cores)
 
 	contents, err := ioutil.ReadFile("/proc/stat") /*Linux cpu 정보*/
 	if err != nil {
@@ -54,46 +56,45 @@ func (c *Cpu) Gathering() []byte {
 		if lines[i] == "" {
 			break
 		}
-		fields := strings.Fields(line)
-		if strings.Contains(fields[0], "cpu") {
+		io := strings.NewReader(line)
+		var cpuName string
+		var Usermode, Systemmode, Nice, Idle, Wait, Irq, Srq int
+		fmt.Fscanf(io, "%s %d %d %d %d %d %d %d",
+			&cpuName,
+			&Usermode,
+			&Systemmode,
+			&Nice,
+			&Idle,
+			&Wait,
+			&Irq,
+			&Srq)
+
+		if strings.Contains(cpuName, "cpu") {
 			if i == 0 {
-				Totalusermode, _ := strconv.ParseUint(fields[1], 10, 32)
-				Totalsystemmode, _ := strconv.ParseUint(fields[2], 10, 32)
-				Totalnice, _ := strconv.ParseUint(fields[3], 10, 32)
-				Totalidle, _ := strconv.ParseUint(fields[4], 10, 32)
-				Totalwait, _ := strconv.ParseUint(fields[5], 10, 32)
-				Totalirq, _ := strconv.ParseUint(fields[6], 10, 32)
-				Totalsrq, _ := strconv.ParseUint(fields[7], 10, 32)
-
-				c.Totalusermode = uint32(Totalusermode)
-				c.Totalsystemmode = uint32(Totalsystemmode)
-				c.Totalnice = uint32(Totalnice)
-				c.Totalidle = uint32(Totalidle)
-				c.Totalwait = uint32(Totalwait)
-				c.Totalirq = uint32(Totalirq)
-				c.Totalsrq = uint32(Totalsrq)
+				// 총 cpu 사용률 계산
+				totalJiffes := Usermode + Systemmode + Nice + Idle
+				totalJiffes -= oldCpu.Usermode + oldCpu.Systemmode + oldCpu.Nice + oldCpu.Idle
+				totalIdleJiffes := Idle - oldCpu.Idle
+				c.CpuUsage = int(100 * (1.0 - float32(totalIdleJiffes)/float32(totalJiffes)))
+				oldCpu = Cpu{CpuUsage: c.CpuUsage, Usermode: Usermode, Systemmode: Systemmode, Nice: Nice, Idle: Idle}
 			} else {
-				var cpuCore Core
-				Usermode, _ := strconv.ParseUint(fields[1], 10, 32)
-				Systemmode, _ := strconv.ParseUint(fields[2], 10, 32)
-				Nice, _ := strconv.ParseUint(fields[3], 10, 32)
-				Idle, _ := strconv.ParseUint(fields[4], 10, 32)
-				Wait, _ := strconv.ParseUint(fields[5], 10, 32)
-				Irq, _ := strconv.ParseUint(fields[6], 10, 32)
-				Srq, _ := strconv.ParseUint(fields[7], 10, 32)
-
-				cpuCore.Corenum = uint32(i)
-				cpuCore.Usermode = uint32(Usermode)
-				cpuCore.Systemmode = uint32(Systemmode)
-				cpuCore.Nice = uint32(Nice)
-				cpuCore.Idle = uint32(Idle)
-				cpuCore.Wait = uint32(Wait)
-				cpuCore.Irq = uint32(Irq)
-				cpuCore.Srq = uint32(Srq)
-				c.Cores = append(c.Cores, cpuCore)
+				if len(oldCores) < i {
+					oldCores = append(oldCores, Core{})
+				}
+				//각 cpu core당 사용률 계산
+				oldCores[i-1].Corename = cpuName
+				totalJiffes := Usermode + Systemmode + Nice + Idle
+				totalJiffes -= oldCores[i-1].Usermode + oldCores[i-1].Systemmode + oldCores[i-1].Nice + oldCores[i-1].Idle
+				totalIdleJiffes := Idle - oldCores[i-1].Idle
+				oldCores[i-1].Coreusage = int(100 * (1.0 - float32(totalIdleJiffes)/float32(totalJiffes)))
+				oldCores[i-1] = Core{Corename: cpuName, Coreusage: oldCores[i-1].Coreusage, Usermode: Usermode, Systemmode: Systemmode, Nice: Nice, Idle: Idle}
 			}
 		}
 	}
+	c.Cores = nil
+	c.Cores = make([]Core,len(oldCores))
+	copy(c.Cores, oldCores)
+	oldCores = nil
 	return c.serialize()
 }
 

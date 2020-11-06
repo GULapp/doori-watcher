@@ -1,29 +1,27 @@
 package treedb
 
 import (
+	"fmt"
 	"strings"
 )
 
 type node struct {
-	depth	uint
-	tag 	string
+	tag     string
 	child   *node
 	brother *node
 	data    *interface{}
 }
 
 func NewNode() *node {
-	return &node{0,"",nil, nil, nil}
+	return &node{"", nil, nil, nil}
 }
 
 func (n *node) addChildNode(pNode *node) {
 	n.child = pNode
-	n.child.depth = n.depth+1
 }
 
 func (n *node) addBrotherNode(pNode *node) {
 	n.brother = pNode
-	n.brother.depth = n.depth
 }
 
 func (n *node) linkDataTable(pData *interface{}) {
@@ -44,24 +42,53 @@ func (n *node) DestoryNode() {
 	n.data = nil
 }
 
-// /depth1/depth2/depth3/depth4
 // /site/domain/server/cpu/... 형식의 문자열
-func (root *node)GetDataTable(path string) (*interface{}, error) {
+func (root *node) GetDataTable(path string) *interface{} {
 	words := strings.Split(path, "/")
+	var pNode = root
 	for i := range words {
-		if root.EqualTag(words[i]) {
+		tag := words[i]
 
-		} else {
+		if pNode, status := pNode.GetChildNextNode(tag); status == false {
+			pNode.child= NewNode()
+			pNode.child.tag = tag
+			pNode = pNode.child
+			fmt.Println("New V --->:", tag)
+		}
 
+		if pNode, status := pNode.GetBrotherNextNode(tag); status == false {
+			pNode.brother = NewNode()
+			pNode.brother.tag = tag
+			fmt.Println("New --->:", tag)
 		}
 	}
-	return nil, nil
+	return pNode.data
 }
 
-func (n *node)NextNode(depth uint,tag string) (*node, error) {
-	return nil, nil
+// 해당되는 Brother node가 존재하면, (*node, true)
+// 해당되는 Brother node가 존재 안하면, last Brother node를 리턴(*last brother node, false)
+func (n *node) GetBrotherNextNode(tag string) (*node, bool) {
+	if n.tag == tag {
+		return n, true
+	}
+	if n.brother == nil {
+		fmt.Println("--->/:", tag)
+		return n, false
+	} else {
+		return n.brother.GetBrotherNextNode(tag)
+	}
 }
 
-func (n *node)EqualTag(value string) bool {
-	return n.tag == value
+// 해당되는 Child node가 존재하면, (*node, true)
+// 해당되는 Child node가 존재 안하면, parent node를 리턴 (*parent node, false)
+func (n *node) GetChildNextNode(tag string) (*node, bool) {
+	if n.tag == tag {
+		return n, true
+	}
+	if n.child == nil{
+		fmt.Println("V /:", tag)
+		return n, false
+	} else {
+		return n.child.GetChildNextNode(tag)
+	}
 }

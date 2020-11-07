@@ -1,14 +1,14 @@
 package treedb
 
 import (
-	"fmt"
+	"errors"
 	"strings"
 )
 
 type node struct {
 	tag     string
 	child   *node
-	brother *node
+	sibling *node
 	data    *interface{}
 }
 
@@ -16,12 +16,22 @@ func NewNode() *node {
 	return &node{"", nil, nil, nil}
 }
 
-func (n *node) addChildNode(pNode *node) {
-	n.child = pNode
-}
-
-func (n *node) addBrotherNode(pNode *node) {
-	n.brother = pNode
+func (n *node) addChildNode(pNode *node) *node {
+	if n.tag == pNode.tag {
+		return n
+	}
+	var temp *node = n.sibling
+	if n.child == nil {
+		n.child = pNode
+		temp = n.child
+	} else {
+		temp = n.sibling
+		for temp.sibling != nil {
+			temp=temp.sibling
+		}
+		temp.sibling = pNode
+	}
+	return temp
 }
 
 func (n *node) linkDataTable(pData *interface{}) {
@@ -34,49 +44,37 @@ func (n *node) DestoryNode() {
 	if n.child != nil {
 		n.child.DestoryNode()
 	}
-	if n.brother != nil {
-		n.brother.DestoryNode()
+	if n.sibling != nil {
+		n.sibling.DestoryNode()
 	}
 	n.child = nil
-	n.brother = nil
+	n.sibling = nil
 	n.data = nil
 }
 
-// /site/domain/server/cpu/... 형식의 문자열
-func (root *node) GetDataTable(path string) *interface{} {
-	words := strings.Split(path, "/")
-	var pNode = root
-	for i := range words {
-		tag := words[i]
-
-		if pNode, status := pNode.GetChildNextNode(tag); status == false {
-			pNode.child= NewNode()
-			pNode.child.tag = tag
-			pNode = pNode.child
-			fmt.Println("New V --->:", tag)
-		}
-
-		if pNode, status := pNode.GetBrotherNextNode(tag); status == false {
-			pNode.brother = NewNode()
-			pNode.brother.tag = tag
-			fmt.Println("New --->:", tag)
-		}
+func (pN *node) Find(tag string) (*node, error) {
+	if pN == nil {
+		return nil, errors.New("node is nil")
 	}
-	return pNode.data
+
+	if pN.tag == tag {
+		return pN, nil
+	}
+
+	if findNode, err := pN.child.Find(tag); err != nil {
+		return findNode, nil
+	}
+
+	if findNode, err := pN.sibling.Find(tag); err != nil {
+		return findNode, nil
+	}
+
+	return findNode, nil
 }
 
-// 해당되는 Brother node가 존재하면, (*node, true)
-// 해당되는 Brother node가 존재 안하면, last Brother node를 리턴(*last brother node, false)
-func (n *node) GetBrotherNextNode(tag string) (*node, bool) {
-	if n.tag == tag {
-		return n, true
-	}
-	if n.brother == nil {
-		fmt.Println("--->/:", tag)
-		return n, false
-	} else {
-		return n.brother.GetBrotherNextNode(tag)
-	}
+// path 는 root/node1/node2 형식값으로 된 문자열
+func (root *node) GenerateNodes(path string) {
+
 }
 
 // 해당되는 Child node가 존재하면, (*node, true)
@@ -86,9 +84,21 @@ func (n *node) GetChildNextNode(tag string) (*node, bool) {
 		return n, true
 	}
 	if n.child == nil{
-		fmt.Println("V /:", tag)
 		return n, false
 	} else {
 		return n.child.GetChildNextNode(tag)
+	}
+}
+
+// 해당되는 Brother node가 존재하면, (*node, true)
+// 해당되는 Brother node가 존재 안하면, last Brother node를 리턴(*last sibling node, false)
+func (n *node) GetBrotherNextNode(tag string) (*node, bool) {
+	if n.tag == tag {
+		return n, true
+	}
+	if n.sibling == nil {
+		return n, false
+	} else {
+		return n.sibling.GetBrotherNextNode(tag)
 	}
 }

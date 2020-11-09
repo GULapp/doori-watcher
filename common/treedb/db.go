@@ -2,6 +2,7 @@ package treedb
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 )
 
@@ -16,25 +17,29 @@ func NewNode() *node {
 	return &node{"", nil, nil, nil}
 }
 
-func (n *node) addChildNode(pNode *node) *node {
+func (n *node) SetNode(tag string) {
+	n.tag = tag
+}
+
+func (n *node) AddNode(pNode *node) *node {
 	if n.tag == pNode.tag {
 		return n
 	}
-	var temp *node = n.sibling
+	var temp *node = nil
 	if n.child == nil {
 		n.child = pNode
 		temp = n.child
 	} else {
 		temp = n.sibling
-		for temp.sibling != nil {
-			temp=temp.sibling
+		for temp != nil {
+			temp = temp.sibling
 		}
-		temp.sibling = pNode
+		temp = pNode
 	}
 	return temp
 }
 
-func (n *node) linkDataTable(pData *interface{}) {
+func (n *node) LinkDataTable(pData *interface{}) {
 	n.data = pData
 }
 
@@ -56,11 +61,9 @@ func (pN *node) Find(tag string) (*node, error) {
 	if pN == nil {
 		return nil, errors.New("node is nil")
 	}
-
 	if pN.tag == tag {
 		return pN, nil
 	}
-
 	if findNode, err := pN.child.Find(tag); err != nil {
 		return findNode, nil
 	}
@@ -68,37 +71,32 @@ func (pN *node) Find(tag string) (*node, error) {
 	if findNode, err := pN.sibling.Find(tag); err != nil {
 		return findNode, nil
 	}
-
-	return findNode, nil
+	return nil, errors.New("not found")
 }
 
 // path 는 root/node1/node2 형식값으로 된 문자열
 func (root *node) GenerateNodes(path string) {
-
-}
-
-// 해당되는 Child node가 존재하면, (*node, true)
-// 해당되는 Child node가 존재 안하면, parent node를 리턴 (*parent node, false)
-func (n *node) GetChildNextNode(tag string) (*node, bool) {
-	if n.tag == tag {
-		return n, true
-	}
-	if n.child == nil{
-		return n, false
-	} else {
-		return n.child.GetChildNextNode(tag)
+	words := strings.Split(path, "/")
+	for _, word := range words {
+		node := NewNode()
+		node.SetNode(word)
+		root.AddNode(node)
 	}
 }
 
-// 해당되는 Brother node가 존재하면, (*node, true)
-// 해당되는 Brother node가 존재 안하면, last Brother node를 리턴(*last sibling node, false)
-func (n *node) GetBrotherNextNode(tag string) (*node, bool) {
-	if n.tag == tag {
-		return n, true
+func (root *node) Print() {
+	root.print(0)
+}
+
+func (n *node) print(leftAlign int) {
+	if n == nil {
+		return
 	}
-	if n.sibling == nil {
-		return n, false
-	} else {
-		return n.sibling.GetBrotherNextNode(tag)
+	for i := 0; i < leftAlign; i++ {
+		fmt.Printf("    ")
 	}
+	fmt.Print(n.tag)
+
+	n.child.print(leftAlign + 1)
+	n.sibling.print(leftAlign)
 }

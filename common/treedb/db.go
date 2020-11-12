@@ -21,14 +21,19 @@ func (n *node) SetNode(tag string) {
 	n.tag = tag
 }
 
-func (n *node) AddNode(pNode *node) *node {
-	if n.tag == pNode.tag {
-		return n
-	}
+// -1, add 못함
+// 0, child add
+// 1, sibling add
+func (n *node) AddNode(pNode *node) int {
 	var temp *node = nil
+
+	if n.tag == pNode.tag {
+		return -1
+	}
+
 	if n.child == nil {
 		n.child = pNode
-		temp = n.child
+		return 0
 	} else {
 		temp = n.sibling
 		for temp != nil {
@@ -36,7 +41,7 @@ func (n *node) AddNode(pNode *node) *node {
 		}
 		temp = pNode
 	}
-	return temp
+	return 1
 }
 
 func (n *node) LinkDataTable(pData *interface{}) {
@@ -76,11 +81,19 @@ func (pN *node) Find(tag string) (*node, error) {
 
 // path 는 root/node1/node2 형식값으로 된 문자열
 func (root *node) GenerateNodes(path string) {
+	var iter *node = root
 	words := strings.Split(path, "/")
 	for _, word := range words {
 		node := NewNode()
 		node.SetNode(word)
-		root.AddNode(node)
+
+		if ret := iter.AddNode(node); ret == 0 {
+			iter = iter.child
+		} else if ret == 1{
+
+		} else {
+			node.DestoryNode()
+		}
 	}
 }
 
@@ -96,7 +109,8 @@ func (n *node) print(leftAlign int) {
 		fmt.Printf("    ")
 	}
 	fmt.Print(n.tag)
+	fmt.Println("")
 
-	n.child.print(leftAlign + 1)
-	n.sibling.print(leftAlign)
+	n.child.print(leftAlign)
+	n.sibling.print(leftAlign+1)
 }

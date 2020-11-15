@@ -41,11 +41,11 @@ func (n *node) AddNode(pNode *node) int {
 		n.child = pNode
 		return 0
 	} else {
-		temp := n.sibling
-		for temp != nil {
-			temp = temp.sibling
+		temp := &n.sibling
+		for *temp != nil {
+			temp = &(*temp).sibling
 		}
-		temp = pNode
+		*temp = pNode
 	}
 	return 1
 }

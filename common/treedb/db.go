@@ -17,15 +17,21 @@ func NewNode() *node {
 	return &node{"", nil, nil, nil}
 }
 
-func (n *node) SetNode(tag string) {
+func (n *node) SetTag(tag string) error {
+	if tag == "" {
+		return errors.New("tag is nil")
+	}
 	n.tag = tag
+	return nil
 }
 
 // -1, add 못함
 // 0, child add
 // 1, sibling add
 func (n *node) AddNode(pNode *node) int {
-	var temp *node = nil
+	if pNode == nil {
+		return -1
+	}
 
 	if n.tag == pNode.tag {
 		return -1
@@ -35,7 +41,7 @@ func (n *node) AddNode(pNode *node) int {
 		n.child = pNode
 		return 0
 	} else {
-		temp = n.sibling
+		temp := n.sibling
 		for temp != nil {
 			temp = temp.sibling
 		}
@@ -85,7 +91,7 @@ func (root *node) GenerateNodes(path string) {
 	words := strings.Split(path, "/")
 	for _, word := range words {
 		node := NewNode()
-		node.SetNode(word)
+		node.SetTag(word)
 
 		if ret := iter.AddNode(node); ret == 0 {
 			iter = iter.child
@@ -111,6 +117,6 @@ func (n *node) print(leftAlign int) {
 	fmt.Print(n.tag)
 	fmt.Println("")
 
-	n.child.print(leftAlign)
-	n.sibling.print(leftAlign+1)
+	n.child.print(leftAlign+1)
+	n.sibling.print(leftAlign)
 }

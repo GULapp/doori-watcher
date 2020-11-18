@@ -25,47 +25,25 @@ func (n *node) SetTag(tag string) error {
 	return nil
 }
 
-// -2, failed to add
 // -1, existing Node
 // 0, add
-func (n *node) Add(pNode *node) int {
-	if pNode == nil || pNode.tag == "" {
-		return -2
-	}
-	if n.tag == pNode.tag {
-		return -1
-	}
-	if n.addChild(pNode) != nil {
-		return -1
+// 이 함수의 호출하는 대상은 parent 형의 노드여야 한다.
+func (parent *node) Add(pNode *node) int {
+	if parent.child == nil {
+		parent.child = pNode
 	} else {
-		if n.addSibling(pNode) != nil {
+		if parent.child.tag == pNode.tag {
 			return -1
 		}
+		var temp *node = parent.child
+		for ; temp.sibling != nil; temp = temp.sibling {
+			if temp.tag == pNode.tag {
+				return -1
+			}
+		}
+		temp.sibling = pNode
 	}
 	return 0
-}
-
-func (n *node) addChild(pNode *node) error {
-	if n.child == nil {
-		n.child = pNode
-		return nil
-	}
-	if n.child.tag == pNode.tag {
-		return n.addSibling(pNode)
-	}
-	return nil
-}
-
-func (n *node) addSibling(pNode *node) error {
-	temp := &n.sibling
-	for *temp != nil {
-		temp = &(*temp).sibling
-		if (*temp).tag == pNode.tag {
-			return errors.New("sibling is duplicated")
-		}
-		*temp = pNode
-	}
-	return nil
 }
 
 func (n *node) LinkDataTable(pData *interface{}) {
@@ -105,17 +83,14 @@ func (pN *node) Find(tag string) (*node, error) {
 
 // path 는 root/node1/node2 형식값으로 된 문자열
 func (root *node) GenerateNodes(path string) {
-	var iter *node = root
+	var parent *node = root
 	words := strings.Split(path, "/")
 	for _, word := range words {
 		node := NewNode()
 		node.SetTag(word)
 
-		if ret := iter.Add(node); ret == 0 {
-			iter = iter.child
-		} else {
-			node.DestroysNode()
-		}
+		parent.Add(node)
+		parent = parent.child
 	}
 }
 
@@ -136,7 +111,7 @@ func (n *node) print(leftAlign int) {
 	if n.tag == "" {
 		n.child.print(leftAlign)
 	} else {
-		n.child.print(leftAlign+1)
+		n.child.print(leftAlign + 1)
 	}
 	n.sibling.print(leftAlign)
 }

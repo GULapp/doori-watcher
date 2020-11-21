@@ -6,6 +6,14 @@ import (
 	"strings"
 )
 
+const (
+	ExistingChild = 1 + iota
+	ExistingSibling
+	DoNothing
+	NewChild
+	NewSibling
+)
+
 type node struct {
 	tag     string
 	child   *node
@@ -25,25 +33,24 @@ func (n *node) SetTag(tag string) error {
 	return nil
 }
 
-// -1, existing Node
-// 0, add
-// 이 함수의 호출하는 대상은 parent 형의 노드여야 한다.
-func (parent *node) Add(pNode *node) int {
+
+func (parent *node) Add(pNode *node) (*node, int) {
 	if parent.child == nil {
 		parent.child = pNode
+		return parent.child, NewChild
 	} else {
 		if parent.child.tag == pNode.tag {
-			return -1
+			return parent.child, ExistingChild
 		}
-		var temp *node = parent.child
+		var temp *node = parent
 		for ; temp.sibling != nil; temp = temp.sibling {
 			if temp.tag == pNode.tag {
-				return -1
+				return temp, ExistingSibling
 			}
 		}
 		temp.sibling = pNode
+		return temp.sibling, NewSibling
 	}
-	return 0
 }
 
 func (n *node) LinkDataTable(pData *interface{}) {
@@ -82,15 +89,24 @@ func (pN *node) Find(tag string) (*node, error) {
 }
 
 // path 는 root/node1/node2 형식값으로 된 문자열
-func (root *node) GenerateNodes(path string) {
+func (root *node) GenerateNodes( path string) {
 	var parent *node = root
 	words := strings.Split(path, "/")
 	for _, word := range words {
 		node := NewNode()
 		node.SetTag(word)
 
-		parent.Add(node)
-		parent = parent.child
+		pos, retCode := parent.Add(node)
+		switch retCode {
+		case NewChild :
+			parent = parent.child
+		case NewSibling :
+			parent = parent.sibling
+		case ExistingChild :
+			parent = parent.child
+		case ExistingSibling: // 여러개의 sibling이면,
+			parent = pos
+		}
 	}
 }
 
@@ -99,19 +115,15 @@ func (root *node) Print() {
 }
 
 func (n *node) print(leftAlign int) {
-	if n == nil {
-		return
-	}
 	for i := 0; i < leftAlign; i++ {
 		fmt.Printf("    ")
 	}
-	fmt.Print(n.tag)
-	fmt.Println("")
+	fmt.Println(n.tag)
 
-	if n.tag == "" {
-		n.child.print(leftAlign)
-	} else {
-		n.child.print(leftAlign + 1)
+	if n.child != nil {
+		n.child.print(leftAlign+1)
 	}
-	n.sibling.print(leftAlign)
+	if n.sibling != nil {
+		n.sibling.print(leftAlign)
+	}
 }

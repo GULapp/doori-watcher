@@ -9,7 +9,6 @@ import (
 const (
 	ExistingChild = 1 + iota
 	ExistingSibling
-	DoNothing
 	NewChild
 	NewSibling
 )
@@ -33,7 +32,6 @@ func (n *node) SetTag(tag string) error {
 	return nil
 }
 
-
 func (parent *node) Add(pNode *node) (*node, int) {
 	if parent.child == nil {
 		parent.child = pNode
@@ -42,14 +40,14 @@ func (parent *node) Add(pNode *node) (*node, int) {
 		if parent.child.tag == pNode.tag {
 			return parent.child, ExistingChild
 		}
-		var temp *node = parent
-		for ; temp.sibling != nil; temp = temp.sibling {
-			if temp.tag == pNode.tag {
-				return temp, ExistingSibling
+		var temp **node = &parent.sibling
+		for ; *temp != nil; temp = &(*temp).sibling {
+			if (*temp).tag == pNode.tag {
+				return *temp, ExistingSibling
 			}
 		}
-		temp.sibling = pNode
-		return temp.sibling, NewSibling
+		*temp = pNode
+		return *temp, NewSibling
 	}
 }
 
@@ -89,7 +87,7 @@ func (pN *node) Find(tag string) (*node, error) {
 }
 
 // path 는 root/node1/node2 형식값으로 된 문자열
-func (root *node) GenerateNodes( path string) {
+func (root *node) GenerateNodes(path string) {
 	var parent *node = root
 	words := strings.Split(path, "/")
 	for _, word := range words {
@@ -98,11 +96,11 @@ func (root *node) GenerateNodes( path string) {
 
 		pos, retCode := parent.Add(node)
 		switch retCode {
-		case NewChild :
+		case NewChild:
 			parent = parent.child
-		case NewSibling :
+		case NewSibling:
 			parent = parent.sibling
-		case ExistingChild :
+		case ExistingChild:
 			parent = parent.child
 		case ExistingSibling: // 여러개의 sibling이면,
 			parent = pos
@@ -121,7 +119,7 @@ func (n *node) print(leftAlign int) {
 	fmt.Println(n.tag)
 
 	if n.child != nil {
-		n.child.print(leftAlign+1)
+		n.child.print(leftAlign + 1)
 	}
 	if n.sibling != nil {
 		n.sibling.print(leftAlign)

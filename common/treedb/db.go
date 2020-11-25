@@ -122,6 +122,6 @@ func (n *node) print(leftAlign int) {
 		n.child.print(leftAlign + 1)
 	}
 	if n.sibling != nil {
-		n.sibling.print(leftAlign)
+		n.sibling.print(leftAlign+1)
 	}
 }

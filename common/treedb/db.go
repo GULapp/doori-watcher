@@ -51,6 +51,21 @@ func (parent *node) Add(pNode *node) (*node, int) {
 	}
 }
 
+func (parent *node) find(tag string) (*node, bool) {
+	if parent.child != nil {
+		if parent.child.tag == tag {
+			return parent.child, true
+		}
+	}
+	var temp **node = &parent.sibling
+	for ; *temp != nil; temp = &(*temp).sibling {
+		if (*temp).tag == tag {
+			return *temp, true
+		}
+	}
+	return nil, false
+}
+
 func (n *node) LinkDataTable(pData *interface{}) {
 	n.data = pData
 }
@@ -69,21 +84,18 @@ func (n *node) DestroysNode() {
 	n.data = nil
 }
 
-func (pN *node) Find(tag string) (*node, error) {
-	if pN == nil {
-		return nil, errors.New("node is nil")
+func (root *node) Find(path string) (*node, error) {
+	var parent *node = root
+	var isFound bool = false
+	words := strings.Split(path, "/")
+	for _, tag := range words {
+		if parent, isFound = parent.find(tag); isFound == true {
+			continue
+		} else {
+			return nil, errors.New("not found")
+		}
 	}
-	if pN.tag == tag {
-		return pN, nil
-	}
-	if findNode, err := pN.child.Find(tag); err != nil {
-		return findNode, nil
-	}
-
-	if findNode, err := pN.sibling.Find(tag); err != nil {
-		return findNode, nil
-	}
-	return nil, errors.New("not found")
+	return parent, nil
 }
 
 // path 는 root/node1/node2 형식값으로 된 문자열
@@ -122,6 +134,14 @@ func (n *node) print(leftAlign int) {
 		n.child.print(leftAlign + 1)
 	}
 	if n.sibling != nil {
-		n.sibling.print(leftAlign+1)
+		n.sibling.print(leftAlign + 1)
 	}
+}
+
+func (n node) Tag() string {
+	return n.tag
+}
+
+func (n *node) Data() interface{} {
+	return n.data
 }

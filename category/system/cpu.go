@@ -13,7 +13,7 @@ import (
 // json:"-" 는, Marshaling할때, 무시됨. 즉 추가되지 않음.
 // json Marshaling를 위해서는 멤버는 exported 형태(노출되어야) 대문자여야 한다.
 type Cpu struct {
-	CpuUsage   int `json:"totalusage"`
+	CpuUsage   int `json:"total usage"`
 	Usermode   int `json:"-"`
 	Systemmode int `json:"-"`
 	Nice       int `json:"-"`
@@ -25,7 +25,7 @@ type Cpu struct {
 }
 
 type Core struct {
-	Corename   string `json:"corename"`
+	Corename   string `json:"core name"`
 	Coreusage  int    `json:"usage"`
 	Usermode   int    `json:"-"`
 	Systemmode int    `json:"-"`

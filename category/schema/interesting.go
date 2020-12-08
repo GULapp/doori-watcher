@@ -1,3 +1,7 @@
+// 해당 스키마의 데이터에 관심이 있다면, 등록한다.
+// 해당 스키마의 데이터가 변경되면 등록된 객체(대상)한테
+// 데이터를 송신한다.
+
 package schema
 
 import (
@@ -18,11 +22,13 @@ func NewWhoInteresting(conn *net.Conn) *whoInteresting{
 	return &whoInteresting{op:true, who:conn, accessTime: time.Now().Unix()}
 }
 
+// 시간을 업데이트 한다.
 func (w *whoInteresting) Update() {
 	w.accessTime = time.Now().Unix()
 }
 
-func (w *whoInteresting) Close() {
+// 등록했었던 객체(대상)을 정리한다.
+func (w *whoInteresting) Release() {
 	w.op = false
 	(*w.who).Close()
 	w.accessTime = 0
@@ -41,6 +47,7 @@ func (w *whoInteresting) IsTimeLimit(seconds int64) bool {
 	return false
 }
 
+// 데이터를 송신하다. 정해지지 않은 json.RawMessage를 보낸다.
 func (w *whoInteresting) Send(jsonBytes json.RawMessage) error {
 	if !w.op {
 		return errors.New("empty")

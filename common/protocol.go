@@ -13,6 +13,8 @@ type Protocol struct {
 // Category는 system | process | ...
 // Category가 system이면 cpu, ram 모니터링, process는 프로세스모니터링
 type Header struct {
+	Site	 string `json:"site"`
+	Domain	 string `json:"domain"`
 	Server   string `json:"server"`
 	Ip       string `json:"ip"`
 	Category string `json:"category"`

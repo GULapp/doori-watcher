@@ -17,6 +17,7 @@ func init() {
 	LOG.Init("/tmp/server.log", LOG.TRACE, 0744)
 }
 
+
 func main() {
 	LOG.Info("Monitoring SERVER START")
 

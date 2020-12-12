@@ -12,30 +12,30 @@ import (
 	LOG "watcher/common/log"
 )
 
-type whoInteresting struct {
+type interestedClient struct {
 	op         bool
 	who        *net.Conn
 	accessTime int64
 }
 
-func NewWhoInteresting(conn *net.Conn) *whoInteresting{
-	return &whoInteresting{op:true, who:conn, accessTime: time.Now().Unix()}
+func NewInterestedPerson(conn *net.Conn) *interestedClient {
+	return &interestedClient{op: true, who:conn, accessTime: time.Now().Unix()}
 }
 
 // 시간을 업데이트 한다.
-func (w *whoInteresting) Update() {
+func (w *interestedClient) Update() {
 	w.accessTime = time.Now().Unix()
 }
 
 // 등록했었던 객체(대상)을 정리한다.
-func (w *whoInteresting) Release() {
+func (w *interestedClient) Release() {
 	w.op = false
 	(*w.who).Close()
 	w.accessTime = 0
 }
 
 // true 리턴하면 주어진 seconds을 이미 지났음
-func (w *whoInteresting) IsTimeLimit(seconds int64) bool {
+func (w *interestedClient) IsTimeLimit(seconds int64) bool {
 	diff := time.Now().Unix() - w.accessTime
 	if diff < 0 {
 		LOG.Fatal("Diff value is negative")
@@ -48,7 +48,7 @@ func (w *whoInteresting) IsTimeLimit(seconds int64) bool {
 }
 
 // 데이터를 송신하다. 정해지지 않은 json.RawMessage를 보낸다.
-func (w *whoInteresting) Send(jsonBytes json.RawMessage) error {
+func (w *interestedClient) Send(jsonBytes json.RawMessage) error {
 	if !w.op {
 		return errors.New("empty")
 	}

@@ -3,20 +3,24 @@ package main
 import (
 	"encoding/json"
 	"os"
-	"watcher/common"
+	"watcher/category/schema"
 	"watcher/category/system"
+	"watcher/common"
+	"watcher/common/treedb"
 
 	//"encoding/json"
 	"watcher/common/feed"
 	LOG "watcher/common/log"
-	//"watcher/category/system"
+)
+
+var (
+	memoryTree = treedb.NewNode()
 )
 
 func init() {
 	//LOG initialize.
 	LOG.Init("/tmp/server.log", LOG.TRACE, 0744)
 }
-
 
 func main() {
 	LOG.Info("Monitoring SERVER START")
@@ -46,6 +50,27 @@ func procTcpData(dataQueue <-chan json.RawMessage) {
 
 		TR := inputMessage.Body.Tr
 
+		posNode := treedb.NewNode()
+		if posNode, err = memoryTree.FindFromArgs(
+			inputMessage.Header.Site,
+			inputMessage.Header.Domain,
+			inputMessage.Header.Server,
+			inputMessage.Header.Category,
+			inputMessage.Body.Tr); posNode == nil {
+
+			posNode = memoryTree.GenerateNodesFromArgs(
+				inputMessage.Header.Site,
+				inputMessage.Header.Domain,
+				inputMessage.Header.Server,
+				inputMessage.Header.Category,
+				inputMessage.Body.Tr)
+
+			switch TR {
+			case "Cpu":
+				posNode.LinkDataTable(schema.CpuScheme{})
+			}
+		}
+
 		switch TR {
 		case "Cpu":
 			var cpuInfo system.Cpu
@@ -54,6 +79,9 @@ func procTcpData(dataQueue <-chan json.RawMessage) {
 				LOG.Error("Unmarshal error : %s", err.Error())
 			}
 			cpuInfo.PrettyPrint()
+			pType := posNode.GetDataTable()
+			pTable := pType.(schema.CpuScheme)
+			pTable.Usage = cpuInfo.CpuUsage
 		default:
 			LOG.Error("unknown TR")
 			os.Exit(-1)

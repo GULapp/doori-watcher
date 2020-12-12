@@ -21,7 +21,7 @@ type Header struct {
 }
 
 // Body는 Tr, 그리고, 어떤 형태인지 모르는 json.RawMessage([]byte) 구성되어 있음
-// Server 쪽에서, Tr를 확인후, 그 에 맞게, Data(json.RawMessage) 변수로 가공함
+// Server 쪽에서, Tr를 확인후, 그 에 맞게, GetDataTable(json.RawMessage) 변수로 가공함
 type Body struct {
 	Tr   string          `json:"tr"`
 	Data json.RawMessage `json:"data"`

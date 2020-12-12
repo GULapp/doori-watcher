@@ -17,7 +17,7 @@ type node struct {
 	tag     string
 	child   *node
 	sibling *node
-	data    *interface{}
+	data    interface{}
 }
 
 func NewNode() *node {
@@ -66,7 +66,7 @@ func (parent *node) find(tag string) (*node, bool) {
 	return nil, false
 }
 
-func (n *node) LinkDataTable(pData *interface{}) {
+func (n *node) LinkDataTable(pData interface{}) {
 	n.data = pData
 }
 
@@ -88,6 +88,18 @@ func (root *node) Find(path string) (*node, error) {
 	var parent *node = root
 	var isFound bool = false
 	words := strings.Split(path, "/")
+	for _, tag := range words { if parent, isFound = parent.find(tag); isFound == true {
+			continue
+		} else {
+			return nil, errors.New("not found")
+		}
+	}
+	return parent, nil
+}
+
+func (root *node) FindFromArgs(words ...string) (*node, error) {
+	var parent *node = root
+	var isFound bool = false
 	for _, tag := range words {
 		if parent, isFound = parent.find(tag); isFound == true {
 			continue
@@ -98,8 +110,10 @@ func (root *node) Find(path string) (*node, error) {
 	return parent, nil
 }
 
+
+
 // path 는 root/node1/node2 형식값으로 된 문자열
-func (root *node) GenerateNodes(path string) {
+func (root *node) GenerateNodes(path string) *node {
 	var parent *node = root
 	words := strings.Split(path, "/")
 	for _, word := range words {
@@ -118,6 +132,28 @@ func (root *node) GenerateNodes(path string) {
 			parent = pos
 		}
 	}
+	return parent
+}
+
+func (root *node) GenerateNodesFromArgs(words ...string) *node {
+	var parent *node = root
+	for _, word := range words {
+		node := NewNode()
+		node.SetTag(word)
+
+		pos, retCode := parent.Add(node)
+		switch retCode {
+		case NewChild:
+			parent = parent.child
+		case NewSibling:
+			parent = parent.sibling
+		case ExistingChild:
+			parent = parent.child
+		case ExistingSibling: // 여러개의 sibling이면,
+			parent = pos
+		}
+	}
+	return parent
 }
 
 func (root *node) Print() {
@@ -142,6 +178,6 @@ func (n node) Tag() string {
 	return n.tag
 }
 
-func (n *node) Data() interface{} {
-	return n.data
+func (n *node) GetDataTable() interface{} {
+	return &n.data
 }

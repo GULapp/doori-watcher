@@ -3,6 +3,7 @@ package treedb
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"strings"
 )
 
@@ -66,8 +67,15 @@ func (parent *node) find(tag string) (*node, bool) {
 	return nil, false
 }
 
-func (n *node) LinkDataTable(pData interface{}) {
+// 해당 노드에 노드가 사라지기전까지의 저장할 데이타구조를 정의한다.
+// 저장할 데이터가 어느형식의 포인터가 되어야 한다. heap 메모리에 저장되어야 함으로
+// 내부적으로 포인터형인지 체크함
+func (n *node) LinkDataTable(pData interface{}) bool {
+	if reflect.ValueOf(pData).Kind() != reflect.Ptr {
+		return false
+	}
 	n.data = pData
+	return true
 }
 
 //재귀함수로 구현해서, node를 정리하도록 한다.
@@ -179,5 +187,5 @@ func (n node) Tag() string {
 }
 
 func (n *node) GetDataTable() interface{} {
-	return &n.data
+	return n.data
 }

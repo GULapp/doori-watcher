@@ -6,6 +6,7 @@ import (
 	"watcher/category/schema"
 	"watcher/category/system"
 	"watcher/common"
+	"watcher/common/config"
 	"watcher/common/treedb"
 
 	//"encoding/json"
@@ -14,10 +15,18 @@ import (
 )
 
 var (
+	tomlConfig config.Config
 	memoryTree = treedb.NewNode()
 )
 
 func init() {
+	var err error
+	tomlConfig, err = config.InitConfig("./config.toml")
+	if err != nil {
+		LOG.Fatal("InitConfig() error, process is terminated")
+		os.Exit(-1)
+	}
+
 	//LOG initialize.
 	LOG.Init("/tmp/server.log", LOG.TRACE, 0744)
 }
@@ -25,7 +34,7 @@ func init() {
 func main() {
 	LOG.Info("Monitoring SERVER START")
 
-	forUIClient := feed.NewFeedRoundHandler("localhost:55555")
+	forUIClient := feed.NewFeedRoundHandler(tomlConfig.Collector.Ui.Ip+":"+tomlConfig.Collector.Ui.Port)
 	forUIClient.WaitFor()
 
 	/*데이터가 들어오면, procTcpData 함수한테 처리하도록 위임. 콜백 등록함.*/
@@ -33,7 +42,7 @@ func main() {
 	/*데이터가 오기를 기다리는 상태(채널 수신이벤트 기다림), procTcpData 호출됨*/
 	forAgents.BringupFeeder()
 	/*데이터를 수신용, 통신 열기*/
-	forAgents.WaitFor("tcp", "localhost:12345")
+	forAgents.WaitFor("tcp", tomlConfig.Collector.Agent.Ip+":"+tomlConfig.Collector.Agent.Port)
 }
 
 func procTcpData(dataQueue <-chan json.RawMessage) {
@@ -67,7 +76,7 @@ func procTcpData(dataQueue <-chan json.RawMessage) {
 
 			switch TR {
 			case "Cpu":
-				posNode.LinkDataTable(schema.CpuScheme{})
+				posNode.LinkDataTable(schema.NewCpuSchema())
 			}
 		}
 
@@ -80,7 +89,7 @@ func procTcpData(dataQueue <-chan json.RawMessage) {
 			}
 			cpuInfo.PrettyPrint()
 			pType := posNode.GetDataTable()
-			pTable := pType.(schema.CpuScheme)
+			pTable := pType.(*schema.CpuSchema)
 			pTable.Usage = cpuInfo.CpuUsage
 		default:
 			LOG.Error("unknown TR")

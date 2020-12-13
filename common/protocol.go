@@ -29,7 +29,9 @@ type Body struct {
 
 // Protocol Header 정보를 셋팅함. 이 Header부분은 자주 바뀌지 않으므로
 // Init 이라는 함수명 부여
-func (protocolSet *Protocol) Init(server string, ip string, category string) {
+func (protocolSet *Protocol) Init(site , domain, server, ip , category string) {
+	protocolSet.Header.Site = site
+	protocolSet.Header.Domain = domain
 	protocolSet.Header.Server = server
 	protocolSet.Header.Ip = ip
 	protocolSet.Header.Category = category

@@ -5,37 +5,35 @@ import (
 	"net"
 	"os"
 	"time"
+	"watcher/category/system"
 	"watcher/collector"
 	"watcher/common"
+	"watcher/common/config"
 	"watcher/common/feed"
 	LOG "watcher/common/log"
-	"watcher/category/system"
 )
 
 var (
+	tomlConfig config.Config
 	gFeedHandler *feed.FeedHandler
 	gConn        net.Conn
 )
 
 func init() {
+	var err error
+	tomlConfig, err = config.InitConfig("./config.toml")
+	if err != nil {
+		LOG.Fatal("InitConfig() error, process is terminated")
+		os.Exit(-1)
+	}
+
 	//LOG initialize.
 	LOG.Init("/tmp/agent.log", LOG.TRACE, 0744)
 }
 
-func connectFeeder() error {
-	var err error
-	gFeedHandler = feed.NewFeedHandler()
-	//to Feeder
-	gConn, err = gFeedHandler.Connect("localhost:12345")
-	if err != nil {
-		LOG.Fatal("failed to Call FeedHandler : %s", err.Error())
-		return err
-	}
-	return nil
-}
-
 func main() {
 	LOG.Info("System Monitoring Agent START")
+
 
 	if err := connectFeeder(); err != nil {
 		LOG.Fatal("failed to connect Feeder %s", err.Error())
@@ -65,7 +63,7 @@ func main() {
 	}()
 
 	protocol := common.Protocol{}
-	protocol.Init("local","127.0.0.1","system")
+	protocol.Init(tomlConfig.Collector.Site,tomlConfig.Collector.Domain,"local","127.0.0.1","system")
 
 	for {
 		for _, g := range collection {
@@ -82,3 +80,16 @@ func main() {
 	LOG.Info("Agent Process is terminated.")
 	os.Exit(0)
 }
+
+func connectFeeder() error {
+	var err error
+	gFeedHandler = feed.NewFeedHandler()
+	//to Feeder
+	gConn, err = gFeedHandler.Connect(tomlConfig.Collector.Agent.Ip+":"+tomlConfig.Collector.Agent.Port)
+	if err != nil {
+		LOG.Fatal("failed to Call FeedHandler : %s", err.Error())
+		return err
+	}
+	return nil
+}
+

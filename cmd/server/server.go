@@ -34,7 +34,7 @@ func init() {
 func main() {
 	LOG.Info("Monitoring SERVER START")
 
-	forUIClient := feed.NewFeedRoundHandler(tomlConfig.Collector.Ui.Ip+":"+tomlConfig.Collector.Ui.Port)
+	forUIClient := feed.NewFeedRoundHandler(tomlConfig.Ui.To.Ip + ":" + tomlConfig.Ui.To.Port)
 	forUIClient.WaitFor()
 
 	/*데이터가 들어오면, procTcpData 함수한테 처리하도록 위임. 콜백 등록함.*/
@@ -42,7 +42,7 @@ func main() {
 	/*데이터가 오기를 기다리는 상태(채널 수신이벤트 기다림), procTcpData 호출됨*/
 	forAgents.BringupFeeder()
 	/*데이터를 수신용, 통신 열기*/
-	forAgents.WaitFor("tcp", tomlConfig.Collector.Agent.Ip+":"+tomlConfig.Collector.Agent.Port)
+	forAgents.WaitFor("tcp", tomlConfig.Agent.To.Ip+":"+tomlConfig.Agent.To.Port)
 }
 
 func procTcpData(dataQueue <-chan json.RawMessage) {

@@ -7,20 +7,20 @@ import (
 	LOG "watcher/common/log"
 )
 
-type BindingAddress struct {
+type To struct {
 	Ip   string `toml:"ip"`
 	Port string `toml:"port"`
 }
 
-type Collector struct {
-	Site   string         `toml:"site"`
-	Domain string         `toml:"domain"`
-	Ui     BindingAddress `toml:"ui"`
-	Agent  BindingAddress `toml:"agent"`
+type Info struct {
+	To    To `toml:"to"`
 }
 
 type Config struct {
-	Collector Collector `toml:"collector"`
+	Site   string `toml:"site"`
+	Domain string `toml:"domain"`
+	Agent  Info   `toml:"agent"`
+	Ui     Info   `toml:"ui"`
 }
 
 func InitConfig(path string) (Config, error) {

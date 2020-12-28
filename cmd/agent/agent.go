@@ -63,7 +63,7 @@ func main() {
 	}()
 
 	protocol := common.Protocol{}
-	protocol.Init(tomlConfig.Collector.Site,tomlConfig.Collector.Domain,"local","127.0.0.1","system")
+	protocol.Init(tomlConfig.Site,tomlConfig.Domain,"local","127.0.0.1","system")
 
 	for {
 		for _, g := range collection {
@@ -85,7 +85,7 @@ func connectFeeder() error {
 	var err error
 	gFeedHandler = feed.NewFeedHandler()
 	//to Feeder
-	gConn, err = gFeedHandler.Connect(tomlConfig.Collector.Agent.Ip+":"+tomlConfig.Collector.Agent.Port)
+	gConn, err = gFeedHandler.Connect(tomlConfig.Agent.To.Ip+":"+tomlConfig.Agent.To.Port)
 	if err != nil {
 		LOG.Fatal("failed to Call FeedHandler : %s", err.Error())
 		return err

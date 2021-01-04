@@ -91,6 +91,7 @@ func procTcpData(dataQueue <-chan json.RawMessage) {
 			pType := posNode.GetDataTable()
 			pTable := pType.(*schema.CpuSchema)
 			pTable.Usage = cpuInfo.CpuUsage
+			LOG.Debug("Node DB usage[%d]", pTable.Usage)
 		default:
 			LOG.Error("unknown TR")
 			os.Exit(-1)

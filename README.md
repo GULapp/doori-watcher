@@ -1,4 +1,4 @@
-# go_monitoring
+# doori-watcher
 
 ## 기능
 리눅스전용 통합 모니터링 어플리케이션.
